@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ko" style="color-scheme: dark;">
+<html lang="ko" style="color-scheme: light;">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0d0d14">
-  <title>James's Arcade</title>
+  <meta name="theme-color" content="#a78bfa">
+  <title>JamesClaw</title>
   <style>
     /* ===== Reset & Base ===== */
     *, *::before, *::after {
@@ -14,18 +14,20 @@
     }
 
     :root {
-      --bg-page:      #0d0d14;
-      --bg-card:      #15151f;
-      --bg-card-hover:#1c1c2a;
-      --border:       #2a2a3d;
-      --border-hover: #6c63ff;
-      --accent:       #6c63ff;
-      --accent-glow:  rgba(108, 99, 255, 0.35);
-      --text-primary: #f0f0f8;
-      --text-muted:   #8888aa;
-      --focus-ring:   #6c63ff;
-      --gold:         #f5c842;
-      --radius-card:  16px;
+      --bg-page:      #f0f4ff;
+      --bg-card:      #ffffff;
+      --bg-card-hover:#f5f0ff;
+      --border:       #dde3f5;
+      --border-hover: #a78bfa;
+      --accent:       #7c3aed;
+      --accent-soft:  #a78bfa;
+      --accent-glow:  rgba(167, 139, 250, 0.30);
+      --text-primary: #1e1b4b;
+      --text-muted:   #6b7280;
+      --focus-ring:   #7c3aed;
+      --mint:         #34d399;
+      --sky:          #38bdf8;
+      --radius-card:  20px;
       --transition-card: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
     }
 
@@ -34,7 +36,8 @@
     }
 
     body {
-      background-color: var(--bg-page);
+      background: linear-gradient(135deg, #e0e7ff 0%, #f0fdf4 50%, #fdf4ff 100%);
+      background-attachment: fixed;
       color: var(--text-primary);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
       min-height: 100vh;
@@ -98,7 +101,7 @@
       font-weight: 800;
       letter-spacing: -0.03em;
       text-wrap: balance;
-      background: linear-gradient(135deg, #f0f0f8 0%, var(--gold) 50%, var(--accent) 100%);
+      background: linear-gradient(135deg, #7c3aed 0%, #38bdf8 50%, #34d399 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -156,7 +159,7 @@
       gap: 0.75rem;
       padding: 2rem 1.5rem;
       background: var(--bg-card);
-      border: 1px solid var(--border);
+      border: 1.5px solid var(--border);
       border-radius: var(--radius-card);
       text-decoration: none;
       color: inherit;
@@ -164,6 +167,7 @@
       transition: var(--transition-card);
       position: relative;
       overflow: hidden;
+      box-shadow: 0 2px 12px rgba(124, 58, 237, 0.07);
     }
 
     /* Subtle shimmer overlay */
@@ -184,9 +188,9 @@
       border-color: var(--border-hover);
       transform: translateY(-6px);
       box-shadow:
-        0 12px 32px rgba(0, 0, 0, 0.5),
-        0 0 0 1px var(--accent),
-        0 0 20px var(--accent-glow);
+        0 16px 36px rgba(124, 58, 237, 0.15),
+        0 0 0 1.5px var(--accent-soft),
+        0 0 24px var(--accent-glow);
     }
 
     .game-card:hover::before,
@@ -239,9 +243,10 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--accent);
-      border: 1px solid var(--accent);
+      border: 1.5px solid var(--accent-soft);
       border-radius: 999px;
       padding: 0.2rem 0.65rem;
+      background: rgba(167, 139, 250, 0.12);
       opacity: 0;
       transform: translateY(4px);
       transition: opacity 180ms ease, transform 180ms ease;
@@ -292,7 +297,7 @@
 
     <header class="site-header" role="banner">
       <span class="logo-emoji" aria-hidden="true">🕹️</span>
-      <h1 class="site-title">James's Arcade</h1>
+      <h1 class="site-title">JamesClaw</h1>
       <p class="site-subtitle">게임을 선택하고 즐기세요</p>
     </header>
 
@@ -309,7 +314,7 @@
     </main>
 
     <footer class="site-footer" role="contentinfo">
-      <p>© 2026 James's Arcade</p>
+      <p>© 2026 JamesClaw</p>
     </footer>
 
   </div>
