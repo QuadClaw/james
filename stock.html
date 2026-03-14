@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f172a">
+  <title>주식투자 - JamesClaw</title>
+  <link rel="icon" type="image/png" href="https://openclaw.ai/apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="https://openclaw.ai/apple-touch-icon.png">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+
+  <style>
+    /* ===== Reset ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-page:   #0f172a;
+      --bg-card:   #1e293b;
+      --bg-header: #0f172a;
+      --border:    #334155;
+      --text:      #f8fafc;
+      --text-muted:#94a3b8;
+      --positive:  #22c55e;
+      --negative:  #ef4444;
+      --neutral:   #6b7280;
+      --accent:    #38bdf8;
+      --radius:    12px;
+      --gap:       16px;
+
+      /* Chart line colors per indicator */
+      --c0: #38bdf8;
+      --c1: #f59e0b;
+      --c2: #22c55e;
+      --c3: #a78bfa;
+      --c4: #fb923c;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg-page);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ===== Skip Link ===== */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      z-index: 999;
+      background: var(--accent);
+      color: #0f172a;
+      padding: 0.5rem 1rem;
+      border-radius: 0 0 8px 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: top 150ms ease;
+    }
+    .skip-link:focus { top: 0; }
+
+    /* ===== Layout ===== */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 var(--gap) 3rem;
+    }
+
+    /* ===== Header ===== */
+    .dashboard-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 1.25rem var(--gap);
+      background: #0d1829;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .header-left h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    #last-updated {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    #auto-refresh-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .btn-refresh {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.45rem 1rem;
+      background: #1e3a5f;
+      color: var(--accent);
+      border: 1px solid #2563eb44;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 180ms ease, transform 100ms ease;
+      min-height: 44px;
+      min-width: 44px;
+    }
+    .btn-refresh:hover { background: #1e4a7f; }
+    .btn-refresh:active { transform: scale(0.97); }
+    .btn-refresh:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--accent);
+      border-top-color: transparent;
+      border-radius: 50%;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .spinner { animation: spin 0.7s linear infinite; }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== KPI Grid ===== */
+    .kpi-section {
+      margin-top: 1.5rem;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--gap);
+    }
+
+    @media (max-width: 1024px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ===== KPI Card ===== */
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 120px;
+    }
+
+    .kpi-card__label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .kpi-card__value {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    .kpi-card__change {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .kpi-card__change.up   { color: var(--positive); }
+    .kpi-card__change.down { color: var(--negative); }
+    .kpi-card__change.flat { color: var(--neutral); }
+
+    .kpi-card__prev {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .kpi-card__error {
+      font-size: 0.82rem;
+      color: var(--negative);
+      margin-top: auto;
+    }
+
+    /* ===== Skeleton ===== */
+    .skeleton {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      min-height: 120px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .skel-line {
+      background: #334155;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .skeleton::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%);
+        animation: shimmer 1.5s infinite;
+      }
+      @keyframes shimmer {
+        0%   { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+    }
+
+    /* ===== Charts Section ===== */
+    .charts-section {
+      margin-top: 2rem;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--gap);
+    }
+
+    @media (max-width: 900px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+
+    .chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+    }
+
+    .chart-card__title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .chart-card canvas {
+      max-height: 220px;
+    }
+
+    /* skeleton chart */
+    .chart-skeleton {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      min-height: 260px;
+      overflow: hidden;
+      position: relative;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .chart-skeleton::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%);
+        animation: shimmer 1.5s infinite;
+      }
+    }
+    .chart-skel-bar {
+      background: #334155;
+      border-radius: 4px;
+    }
+
+    /* ===== Error Banner ===== */
+    .error-banner {
+      background: #450a0a;
+      border: 1px solid #991b1b;
+      border-radius: var(--radius);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .error-banner p {
+      color: #fca5a5;
+      font-size: 0.9rem;
+      flex: 1;
+    }
+
+    .btn-retry {
+      padding: 0.4rem 0.9rem;
+      background: #991b1b;
+      color: #fca5a5;
+      border: 1px solid #dc262644;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 36px;
+      white-space: nowrap;
+    }
+    .btn-retry:hover { background: #7f1d1d; }
+    .btn-retry:focus-visible { outline: 2px solid #ef4444; outline-offset: 2px; }
+
+    /* hidden */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">본문으로 건너뛰기</a>
+
+<!-- ===== Header ===== -->
+<header class="dashboard-header" role="banner">
+  <div class="header-left">
+    <h1>📈 주식투자</h1>
+  </div>
+  <div class="header-right">
+    <span id="last-updated" aria-live="polite" aria-atomic="true">—</span>
+    <span id="auto-refresh-label" aria-hidden="true">· 30초 자동 갱신</span>
+    <button id="btn-refresh" class="btn-refresh" aria-label="데이터 새로고침">
+      <span id="refresh-icon">⟳</span>
+      <span>새로고침</span>
+    </button>
+  </div>
+</header>
+
+<!-- ===== Main ===== -->
+<main id="main-content" class="container">
+
+  <!-- Error banner (hidden by default) -->
+  <div id="error-banner" class="error-banner hidden" role="alert">
+    <p>데이터를 불러오지 못했습니다. 네트워크 상태를 확인하거나 재시도해 주세요.</p>
+    <button class="btn-retry" id="btn-retry">재시도</button>
+  </div>
+
+  <!-- KPI Cards -->
+  <section class="kpi-section" aria-label="주요 지표">
+    <p class="section-label">실시간 지표</p>
+    <div id="kpi-grid" class="kpi-grid" aria-live="polite" aria-atomic="false">
+      <!-- Skeleton -->
+    </div>
+  </section>
+
+  <!-- Charts -->
+  <section class="charts-section" aria-label="1개월 추이 차트">
+    <p class="section-label">1개월 추이</p>
+    <div id="charts-grid" class="charts-grid" aria-live="polite" aria-atomic="false">
+      <!-- Skeleton -->
+    </div>
+  </section>
+
+</main>
+
+<script>
+// ─────────────────────────────────────────────
+//  지표 목록 — 여기에 추가하면 카드+차트 자동 생성
+// ─────────────────────────────────────────────
+const INDICATORS = [
+  { symbol: 'CL=F',  name: 'WTI 유가',      unit: 'USD', emoji: '🛢️' },
+  { symbol: 'KRW=X', name: 'USD/KRW 환율',  unit: '원',  emoji: '💱' },
+  { symbol: '^KS11', name: '코스피',          unit: 'pt',  emoji: '🇰🇷' },
+  { symbol: '^KQ11', name: '코스닥',          unit: 'pt',  emoji: '📊' },
+  { symbol: '^IXIC', name: '나스닥',          unit: 'pt',  emoji: '🇺🇸' },
+  // 여기에 새 지표 추가하면 자동으로 카드+차트 생성
+];
+
+// Chart colors per indicator index
+const CHART_COLORS = ['#38bdf8','#f59e0b','#22c55e','#a78bfa','#fb923c'];
+
+// ─────────────────────────────────────────────
+//  State
+// ─────────────────────────────────────────────
+let charts = {};           // symbol → Chart instance
+let autoRefreshTimer = null;
+let isLoading = false;
+
+// ─────────────────────────────────────────────
+//  Helpers
+// ─────────────────────────────────────────────
+function formatValue(value, unit) {
+  if (value == null) return '—';
+  if (unit === 'USD') return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (unit === '원')  return value.toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+  // pt (코스피, 코스닥, 나스닥)
+  return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatDate(isoString) {
+  try {
+    return new Date(isoString).toLocaleString('ko-KR', {
+      month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit',
+      hour12: false,
+    });
+  } catch { return isoString; }
+}
+
+function changeClass(pct) {
+  if (pct == null) return 'flat';
+  if (pct > 0) return 'up';
+  if (pct < 0) return 'down';
+  return 'flat';
+}
+
+function changeArrow(pct) {
+  if (pct == null) return '';
+  if (pct > 0) return '↑ ';
+  if (pct < 0) return '↓ ';
+  return '';
+}
+
+// ─────────────────────────────────────────────
+//  Skeleton Rendering
+// ─────────────────────────────────────────────
+function renderSkeletons() {
+  const kpiGrid = document.getElementById('kpi-grid');
+  const chartsGrid = document.getElementById('charts-grid');
+
+  kpiGrid.innerHTML = INDICATORS.map(() => `
+    <div class="skeleton" aria-hidden="true">
+      <div class="skel-line" style="width:60%;height:12px;"></div>
+      <div class="skel-line" style="width:80%;height:32px;"></div>
+      <div class="skel-line" style="width:50%;height:12px;"></div>
+    </div>
+  `).join('');
+
+  chartsGrid.innerHTML = INDICATORS.map(() => `
+    <div class="chart-skeleton" aria-hidden="true">
+      <div class="chart-skel-bar" style="width:45%;height:12px;margin-bottom:16px;"></div>
+      <div style="display:flex;align-items:flex-end;gap:4px;height:160px;margin-bottom:8px;">
+        ${Array.from({length:20},(_,i)=>`<div class="chart-skel-bar" style="flex:1;height:${20+Math.sin(i)*40+40}px;opacity:${0.3+i*0.03};"></div>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─────────────────────────────────────────────
+//  KPI Card Rendering
+// ─────────────────────────────────────────────
+function renderKPICards(data) {
+  const grid = document.getElementById('kpi-grid');
+  grid.innerHTML = INDICATORS.map(ind => {
+    const d = data[ind.symbol];
+    if (!d) return renderKPIError(ind, '데이터 없음');
+    if (d.error) return renderKPIError(ind, d.error);
+    return renderKPICard(ind, d);
+  }).join('');
+}
+
+function renderKPICard(ind, d) {
+  const cls = changeClass(d.changePercent);
+  const arrow = changeArrow(d.changePercent);
+  const pct = d.changePercent != null ? `${Math.abs(d.changePercent).toFixed(2)}%` : '—';
+  const changeAbs = d.change != null ? formatValue(Math.abs(d.change), ind.unit) : '—';
+
+  return `
+    <div class="kpi-card" tabindex="0" aria-label="${ind.name} ${formatValue(d.current, ind.unit)} ${ind.unit}">
+      <div class="kpi-card__label">
+        <span aria-hidden="true">${ind.emoji}</span>
+        ${escapeHtml(ind.name)}
+        <small style="color:#475569;font-size:0.7rem;">(${ind.unit})</small>
+      </div>
+      <div class="kpi-card__value">${formatValue(d.current, ind.unit)}</div>
+      <div class="kpi-card__change ${cls}">${arrow}${pct} (${changeAbs})</div>
+      <div class="kpi-card__prev">전일 종가 ${formatValue(d.previousClose, ind.unit)}</div>
+    </div>
+  `;
+}
+
+function renderKPIError(ind, msg) {
+  return `
+    <div class="kpi-card" tabindex="0" aria-label="${ind.name} 데이터 오류">
+      <div class="kpi-card__label">
+        <span aria-hidden="true">${ind.emoji}</span>
+        ${escapeHtml(ind.name)}
+      </div>
+      <div class="kpi-card__value" style="font-size:1.4rem;color:var(--text-muted)">—</div>
+      <div class="kpi-card__error">⚠ ${escapeHtml(msg)}</div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────
+//  Chart Rendering
+// ─────────────────────────────────────────────
+function renderCharts(data) {
+  const grid = document.getElementById('charts-grid');
+
+  // Destroy old chart instances
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+
+  grid.innerHTML = INDICATORS.map((ind, i) => `
+    <div class="chart-card">
+      <div class="chart-card__title">
+        <span aria-hidden="true">${ind.emoji}</span>
+        ${escapeHtml(ind.name)} · 1개월 추이
+      </div>
+      <canvas id="chart-${i}" aria-label="${ind.name} 1개월 추이 차트" role="img"></canvas>
+    </div>
+  `).join('');
+
+  INDICATORS.forEach((ind, i) => {
+    const d = data[ind.symbol];
+    const canvas = document.getElementById(`chart-${i}`);
+    if (!canvas) return;
+
+    const history = d?.history || [];
+    if (history.length === 0) {
+      canvas.parentElement.innerHTML += `<p style="color:var(--text-muted);font-size:0.8rem;text-align:center;margin-top:1rem;">데이터 수집 중...</p>`;
+      return;
+    }
+
+    const labels = history.map(h => h.date);
+    const values = history.map(h => h.close);
+    const color = CHART_COLORS[i % CHART_COLORS.length];
+
+    const ctx = canvas.getContext('2d');
+
+    // Gradient fill
+    const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+    gradient.addColorStop(0, color + '33');
+    gradient.addColorStop(1, color + '00');
+
+    charts[ind.symbol] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: ind.name,
+          data: values,
+          borderColor: color,
+          backgroundColor: gradient,
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: color,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 400 },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1e293b',
+            borderColor: '#334155',
+            borderWidth: 1,
+            titleColor: '#94a3b8',
+            bodyColor: '#f8fafc',
+            callbacks: {
+              label: ctx => ` ${formatValue(ctx.parsed.y, ind.unit)} ${ind.unit}`,
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: '#1e293b' },
+            ticks: {
+              color: '#64748b',
+              maxTicksLimit: 6,
+              font: { size: 11 },
+            }
+          },
+          y: {
+            grid: { color: '#1e293b' },
+            ticks: {
+              color: '#64748b',
+              font: { size: 11 },
+              callback: v => formatValue(v, ind.unit),
+            }
+          }
+        }
+      }
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+//  Data Fetching
+// ─────────────────────────────────────────────
+async function fetchData() {
+  if (isLoading) return;
+  isLoading = true;
+
+  const btn = document.getElementById('btn-refresh');
+  const icon = document.getElementById('refresh-icon');
+  btn.disabled = true;
+  icon.outerHTML = `<span id="refresh-icon" class="spinner" aria-hidden="true"></span>`;
+
+  const symbols = INDICATORS.map(i => i.symbol).join(',');
+  const url = `/api/market?symbols=${encodeURIComponent(symbols)}&range=1mo&interval=1d`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+
+    document.getElementById('error-banner').classList.add('hidden');
+    renderKPICards(json.data);
+    renderCharts(json.data);
+
+    const ts = formatDate(json.updatedAt);
+    document.getElementById('last-updated').textContent = `업데이트: ${ts}`;
+  } catch (err) {
+    console.error('fetchData error:', err);
+    document.getElementById('error-banner').classList.remove('hidden');
+    document.getElementById('last-updated').textContent = '데이터 로드 실패';
+  } finally {
+    isLoading = false;
+    const btnAfter = document.getElementById('btn-refresh');
+    btnAfter.disabled = false;
+    const spinnerEl = document.getElementById('refresh-icon');
+    if (spinnerEl && spinnerEl.classList.contains('spinner')) {
+      spinnerEl.outerHTML = `<span id="refresh-icon" aria-hidden="true">⟳</span>`;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Auto Refresh
+// ─────────────────────────────────────────────
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(fetchData, 30000);
+}
+
+// ─────────────────────────────────────────────
+//  Event Listeners
+// ─────────────────────────────────────────────
+document.getElementById('btn-refresh').addEventListener('click', () => {
+  fetchData();
+  startAutoRefresh(); // reset interval
+});
+
+document.getElementById('btn-retry').addEventListener('click', () => {
+  document.getElementById('error-banner').classList.add('hidden');
+  renderSkeletons();
+  fetchData();
+});
+
+// Keyboard: Enter/Space on kpi-card
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('kpi-card')) {
+    e.preventDefault();
+  }
+});
+
+// ─────────────────────────────────────────────
+//  XSS helper
+// ─────────────────────────────────────────────
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ─────────────────────────────────────────────
+//  Init
+// ─────────────────────────────────────────────
+renderSkeletons();
+fetchData();
+startAutoRefresh();
+</script>
+</body>
+</html>
