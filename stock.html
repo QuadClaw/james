@@ -346,6 +346,45 @@
     .btn-retry:hover { background: #7f1d1d; }
     .btn-retry:focus-visible { outline: 2px solid #ef4444; outline-offset: 2px; }
 
+    /* ===== Period Toggle Buttons ===== */
+    .period-toggle {
+      display: flex;
+      gap: 3px;
+      background: #1e293b;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .btn-period {
+      padding: 0.3rem 0.75rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text-muted);
+      transition: background 150ms ease, color 150ms ease;
+      min-height: 32px;
+      line-height: 1;
+    }
+
+    .btn-period:hover:not([aria-pressed="true"]) {
+      background: #334155;
+      color: var(--text);
+    }
+
+    .btn-period[aria-pressed="true"] {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    .btn-period:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
     /* hidden */
     .hidden { display: none !important; }
   </style>
@@ -360,6 +399,10 @@
     <h1>📈 주식투자</h1>
   </div>
   <div class="header-right">
+    <div class="period-toggle" role="group" aria-label="기간 선택">
+      <button class="btn-period" id="btn-1d"  aria-pressed="true"  data-range="1d"  data-interval="5m">1일</button>
+      <button class="btn-period" id="btn-1mo" aria-pressed="false" data-range="1mo" data-interval="1d">1개월</button>
+    </div>
     <span id="last-updated" aria-live="polite" aria-atomic="true">—</span>
     <span id="auto-refresh-label" aria-hidden="true">· 30초 자동 갱신</span>
     <button id="btn-refresh" class="btn-refresh" aria-label="데이터 새로고침">
@@ -387,8 +430,8 @@
   </section>
 
   <!-- Charts -->
-  <section class="charts-section" aria-label="1개월 추이 차트">
-    <p class="section-label">1개월 추이</p>
+  <section class="charts-section" aria-label="추이 차트">
+    <p class="section-label" id="charts-section-label">1일 추이</p>
     <div id="charts-grid" class="charts-grid" aria-live="polite" aria-atomic="false">
       <!-- Skeleton -->
     </div>
@@ -418,6 +461,14 @@ const CHART_COLORS = ['#38bdf8','#f59e0b','#22c55e','#a78bfa','#fb923c'];
 let charts = {};           // symbol → Chart instance
 let autoRefreshTimer = null;
 let isLoading = false;
+
+// Period state — default: 1일 (range=1d, interval=5m)
+let currentPeriod = { range: '1d', interval: '5m', label: '1일' };
+
+const PERIOD_OPTIONS = [
+  { id: 'btn-1d',  range: '1d',  interval: '5m', label: '1일' },
+  { id: 'btn-1mo', range: '1mo', interval: '1d', label: '1개월' },
+];
 
 // ─────────────────────────────────────────────
 //  Helpers
@@ -497,6 +548,7 @@ function renderKPICard(ind, d) {
   const arrow = changeArrow(d.changePercent);
   const pct = d.changePercent != null ? `${Math.abs(d.changePercent).toFixed(2)}%` : '—';
   const changeAbs = d.change != null ? formatValue(Math.abs(d.change), ind.unit) : '—';
+  const prevLabel = currentPeriod.range === '1d' ? '전일 종가' : '1개월 전 종가';
 
   return `
     <div class="kpi-card" tabindex="0" aria-label="${ind.name} ${formatValue(d.current, ind.unit)} ${ind.unit}">
@@ -507,7 +559,7 @@ function renderKPICard(ind, d) {
       </div>
       <div class="kpi-card__value">${formatValue(d.current, ind.unit)}</div>
       <div class="kpi-card__change ${cls}">${arrow}${pct} (${changeAbs})</div>
-      <div class="kpi-card__prev">전일 종가 ${formatValue(d.previousClose, ind.unit)}</div>
+      <div class="kpi-card__prev">${prevLabel} ${formatValue(d.previousClose, ind.unit)}</div>
     </div>
   `;
 }
@@ -539,9 +591,9 @@ function renderCharts(data) {
     <div class="chart-card">
       <div class="chart-card__title">
         <span aria-hidden="true">${ind.emoji}</span>
-        ${escapeHtml(ind.name)} · 1개월 추이
+        ${escapeHtml(ind.name)} · ${currentPeriod.label} 추이
       </div>
-      <canvas id="chart-${i}" aria-label="${ind.name} 1개월 추이 차트" role="img"></canvas>
+      <canvas id="chart-${i}" aria-label="${ind.name} ${currentPeriod.label} 추이 차트" role="img"></canvas>
     </div>
   `).join('');
 
@@ -638,7 +690,7 @@ async function fetchData() {
   icon.outerHTML = `<span id="refresh-icon" class="spinner" aria-hidden="true"></span>`;
 
   const symbols = INDICATORS.map(i => i.symbol).join(',');
-  const url = `/api/market?symbols=${encodeURIComponent(symbols)}&range=1mo&interval=1d`;
+  const url = `/api/market?symbols=${encodeURIComponent(symbols)}&range=${currentPeriod.range}&interval=${currentPeriod.interval}`;
 
   try {
     const res = await fetch(url);
@@ -646,6 +698,8 @@ async function fetchData() {
     const json = await res.json();
 
     document.getElementById('error-banner').classList.add('hidden');
+    // Update section label
+    document.getElementById('charts-section-label').textContent = `${currentPeriod.label} 추이`;
     renderKPICards(json.data);
     renderCharts(json.data);
 
@@ -673,6 +727,30 @@ function startAutoRefresh() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
   autoRefreshTimer = setInterval(fetchData, 30000);
 }
+
+// ─────────────────────────────────────────────
+//  Period Toggle
+// ─────────────────────────────────────────────
+function setPeriod(option) {
+  if (currentPeriod.range === option.range) return; // no-op if already selected
+  currentPeriod = { range: option.range, interval: option.interval, label: option.label };
+
+  // Update aria-pressed on all buttons
+  PERIOD_OPTIONS.forEach(opt => {
+    const el = document.getElementById(opt.id);
+    if (el) el.setAttribute('aria-pressed', String(opt.range === option.range));
+  });
+
+  // Show skeletons and fetch fresh data
+  renderSkeletons();
+  fetchData();
+  startAutoRefresh(); // reset interval
+}
+
+PERIOD_OPTIONS.forEach(opt => {
+  const el = document.getElementById(opt.id);
+  if (el) el.addEventListener('click', () => setPeriod(opt));
+});
 
 // ─────────────────────────────────────────────
 //  Event Listeners
