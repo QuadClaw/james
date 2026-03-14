@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko" style="color-scheme: dark;">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0f0c29" />
-  <title>Hello, James</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0d0d14">
+  <title>James's Arcade</title>
   <style>
-    /* Reset & base */
+    /* ===== Reset & Base ===== */
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
@@ -14,194 +14,371 @@
     }
 
     :root {
-      --gradient-start: #0f0c29;
-      --gradient-mid: #302b63;
-      --gradient-end: #24243e;
-      --text-primary: #ffffff;
-      --text-sub: rgba(255, 255, 255, 0.6);
-      --accent: #a78bfa;
+      --bg-page:      #0d0d14;
+      --bg-card:      #15151f;
+      --bg-card-hover:#1c1c2a;
+      --border:       #2a2a3d;
+      --border-hover: #6c63ff;
+      --accent:       #6c63ff;
+      --accent-glow:  rgba(108, 99, 255, 0.35);
+      --text-primary: #f0f0f8;
+      --text-muted:   #8888aa;
+      --focus-ring:   #6c63ff;
+      --gold:         #f5c842;
+      --radius-card:  16px;
+      --transition-card: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
     }
 
     html {
-      font-size: 16px;
       scroll-behavior: smooth;
     }
 
     body {
-      min-height: 100dvh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-mid) 50%, var(--gradient-end) 100%);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-page);
       color: var(--text-primary);
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      min-height: 100vh;
       padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
-    /* Skip link */
+    /* ===== Skip Link ===== */
     .skip-link {
       position: absolute;
-      top: -40px;
-      left: 0;
+      top: -100%;
+      left: 1rem;
+      z-index: 999;
       background: var(--accent);
-      color: #000;
-      padding: 8px 16px;
-      border-radius: 0 0 8px 0;
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 0 0 8px 8px;
       font-weight: 600;
-      z-index: 100;
-      transition: top 0.2s ease;
       text-decoration: none;
+      transition: top 150ms ease;
     }
-    .skip-link:focus-visible {
+    .skip-link:focus {
       top: 0;
     }
 
-    /* Card container */
-    main {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 2rem;
-      max-width: 640px;
-      width: 100%;
-    }
-
-    /* Decorative glow ring */
-    .glow-ring {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 180px;
-      height: 180px;
-      border-radius: 50%;
-      margin-bottom: 2.5rem;
-      background: radial-gradient(circle, rgba(167, 139, 250, 0.15) 0%, transparent 70%);
-      animation: pulse 3s ease-in-out infinite;
-      aria-hidden: true;
-    }
-
-    .glow-ring::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      border: 2px solid rgba(167, 139, 250, 0.3);
-      animation: ring-expand 3s ease-in-out infinite;
-    }
-
-    .glow-ring-icon {
-      font-size: 4rem;
-      line-height: 1;
-      user-select: none;
-    }
-
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.04); opacity: 0.9; }
-    }
-
-    @keyframes ring-expand {
-      0%, 100% { transform: scale(1); opacity: 0.3; }
-      50% { transform: scale(1.12); opacity: 0.6; }
-    }
-
-    /* Heading */
-    h1 {
-      font-size: clamp(2.5rem, 8vw, 5rem);
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      line-height: 1.1;
-      text-wrap: balance;
-      background: linear-gradient(135deg, #ffffff 30%, var(--accent) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 1rem;
-    }
-
-    /* Subtitle */
-    .subtitle {
-      font-size: clamp(0.95rem, 2.5vw, 1.125rem);
-      color: var(--text-sub);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      font-weight: 500;
-      margin-bottom: 2.5rem;
-    }
-
-    /* Divider */
-    .divider {
-      width: 48px;
-      height: 2px;
-      border-radius: 2px;
-      background: linear-gradient(90deg, var(--accent), transparent);
+    /* ===== Layout ===== */
+    .page-wrapper {
+      max-width: 1100px;
       margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
     }
 
-    /* Reduce motion */
+    /* ===== Header ===== */
+    .site-header {
+      text-align: center;
+      padding: 3rem 0 2.5rem;
+    }
+
+    .site-header .logo-emoji {
+      font-size: 3.5rem;
+      display: block;
+      margin-bottom: 0.5rem;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-8px); }
+    }
+
     @media (prefers-reduced-motion: reduce) {
-      .glow-ring,
-      .glow-ring::before {
+      .site-header .logo-emoji {
         animation: none;
       }
     }
 
-    /* Dark mode (explicit override if OS is light) */
-    @media (prefers-color-scheme: light) {
-      :root {
-        --gradient-start: #e0e7ff;
-        --gradient-mid: #c7d2fe;
-        --gradient-end: #ddd6fe;
-        --text-primary: #1e1b4b;
-        --text-sub: rgba(30, 27, 75, 0.55);
-        --accent: #7c3aed;
-      }
+    .site-title {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      text-wrap: balance;
+      background: linear-gradient(135deg, #f0f0f8 0%, var(--gold) 50%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
 
-      h1 {
-        background: linear-gradient(135deg, #1e1b4b 30%, var(--accent) 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
+    .site-subtitle {
+      margin-top: 0.6rem;
+      color: var(--text-muted);
+      font-size: 1rem;
+      text-wrap: balance;
+    }
 
-      .glow-ring {
-        background: radial-gradient(circle, rgba(124, 58, 237, 0.12) 0%, transparent 70%);
-      }
+    /* ===== Divider ===== */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0 0 2.5rem;
+    }
 
-      .glow-ring::before {
-        border-color: rgba(124, 58, 237, 0.25);
+    /* ===== Section Heading ===== */
+    .section-heading {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+    }
+
+    /* ===== Game Grid ===== */
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 768px) {
+      .game-grid {
+        grid-template-columns: repeat(2, 1fr);
       }
     }
 
-    /* Responsive fine-tuning */
     @media (max-width: 480px) {
-      .glow-ring {
-        width: 120px;
-        height: 120px;
-        margin-bottom: 1.75rem;
+      .game-grid {
+        grid-template-columns: 1fr;
       }
-      .glow-ring-icon {
-        font-size: 2.75rem;
+    }
+
+    /* ===== Game Card ===== */
+    .game-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.75rem;
+      padding: 2rem 1.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      transition: var(--transition-card);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Subtle shimmer overlay */
+    .game-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius-card);
+      background: radial-gradient(circle at 50% 0%, var(--accent-glow), transparent 70%);
+      opacity: 0;
+      transition: opacity 220ms ease;
+      pointer-events: none;
+    }
+
+    .game-card:hover,
+    .game-card:focus-visible {
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+      transform: translateY(-6px);
+      box-shadow:
+        0 12px 32px rgba(0, 0, 0, 0.5),
+        0 0 0 1px var(--accent),
+        0 0 20px var(--accent-glow);
+    }
+
+    .game-card:hover::before,
+    .game-card:focus-visible::before {
+      opacity: 1;
+    }
+
+    .game-card:focus-visible {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 3px;
+    }
+
+    /* Reduce motion: no transform, keep glow */
+    @media (prefers-reduced-motion: reduce) {
+      .game-card {
+        transition: box-shadow 220ms ease, border-color 220ms ease;
       }
+      .game-card:hover,
+      .game-card:focus-visible {
+        transform: none;
+      }
+    }
+
+    .game-card__emoji {
+      font-size: 3rem;
+      line-height: 1;
+      display: block;
+    }
+
+    .game-card__name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .game-card__desc {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .game-card__badge {
+      margin-top: auto;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      padding: 0.2rem 0.65rem;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .game-card:hover .game-card__badge,
+    .game-card:focus-visible .game-card__badge {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .game-card__badge {
+        transform: none;
+        transition: opacity 180ms ease;
+      }
+    }
+
+    /* ===== Empty State (fallback if games array is empty) ===== */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+    }
+
+    .empty-state p {
+      font-size: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    /* ===== Footer ===== */
+    .site-footer {
+      text-align: center;
+      padding-top: 3rem;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+      margin-top: 3rem;
     }
   </style>
 </head>
 <body>
-  <a href="#main-content" class="skip-link">Skip to main content</a>
 
-  <main id="main-content">
-    <div class="glow-ring" aria-hidden="true">
-      <span class="glow-ring-icon">👋</span>
-    </div>
+  <a href="#main-content" class="skip-link">본문으로 건너뛰기</a>
 
-    <h1>Hello, James</h1>
-    <p class="subtitle">Welcome back</p>
-    <div class="divider" aria-hidden="true"></div>
-  </main>
+  <div class="page-wrapper">
+
+    <header class="site-header" role="banner">
+      <span class="logo-emoji" aria-hidden="true">🕹️</span>
+      <h1 class="site-title">James's Arcade</h1>
+      <p class="site-subtitle">게임을 선택하고 즐기세요</p>
+    </header>
+
+    <hr class="divider" aria-hidden="true">
+
+    <main id="main-content">
+      <h2 class="section-heading">게임 목록</h2>
+      <div
+        class="game-grid"
+        role="list"
+        aria-label="게임 목록"
+        id="game-grid"
+      ></div>
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>© 2026 James's Arcade</p>
+    </footer>
+
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────
+    //  게임 목록 — 이 배열에 항목 추가하면 카드 자동 생성
+    // ─────────────────────────────────────────────
+    const games = [
+      {
+        name: '슬롯머신',
+        emoji: '🎰',
+        desc: '클래식 3×3 초밥 테마 슬롯. 스핀하고 행운을 시험해보세요!',
+        url: 'slot.html',
+        badge: '플레이'
+      },
+      // 새 게임을 여기에 추가하세요. 예:
+      // { name: '블랙잭', emoji: '🃏', desc: '21에 도전하세요.', url: 'blackjack.html', badge: '플레이' },
+    ];
+
+    // ─────────────────────────────────────────────
+    //  카드 렌더링
+    // ─────────────────────────────────────────────
+    (function renderGames() {
+      const grid = document.getElementById('game-grid');
+
+      if (!games.length) {
+        grid.innerHTML = `
+          <div class="empty-state" role="listitem">
+            <span aria-hidden="true" style="font-size:2.5rem">🎮</span>
+            <p>아직 등록된 게임이 없습니다.</p>
+          </div>`;
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+
+      games.forEach(function(game) {
+        const a = document.createElement('a');
+        a.href = game.url;
+        a.className = 'game-card';
+        a.setAttribute('role', 'listitem');
+        a.setAttribute('aria-label', game.name + ' — ' + game.desc);
+
+        a.innerHTML = `
+          <span class="game-card__emoji" aria-hidden="true">${game.emoji}</span>
+          <span class="game-card__name">${escapeHtml(game.name)}</span>
+          <span class="game-card__desc">${escapeHtml(game.desc)}</span>
+          <span class="game-card__badge" aria-hidden="true">${escapeHtml(game.badge || '플레이')}</span>
+        `;
+
+        fragment.appendChild(a);
+      });
+
+      grid.appendChild(fragment);
+    })();
+
+    // ─────────────────────────────────────────────
+    //  XSS 방지 헬퍼
+    // ─────────────────────────────────────────────
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+  </script>
+
 </body>
 </html>
