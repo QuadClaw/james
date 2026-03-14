@@ -78,10 +78,11 @@
       padding: 3rem 0 2.5rem;
     }
 
-    .site-header .logo-emoji {
-      font-size: 3.5rem;
+    .site-header .logo-icon {
+      width: 64px;
+      height: 64px;
       display: block;
-      margin-bottom: 0.5rem;
+      margin: 0 auto 0.5rem;
       animation: float 3s ease-in-out infinite;
     }
 
@@ -91,7 +92,7 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .site-header .logo-emoji {
+      .site-header .logo-icon {
         animation: none;
       }
     }
@@ -215,19 +216,19 @@
     }
 
     .game-card__emoji {
-      font-size: 3rem;
+      font-size: 3.5rem;
       line-height: 1;
       display: block;
     }
 
     .game-card__name {
-      font-size: 1.15rem;
+      font-size: 1.5rem;
       font-weight: 700;
       color: var(--text-primary);
     }
 
     .game-card__desc {
-      font-size: 0.875rem;
+      font-size: 1rem;
       color: var(--text-muted);
       line-height: 1.5;
       overflow: hidden;
@@ -296,7 +297,7 @@
   <div class="page-wrapper">
 
     <header class="site-header" role="banner">
-      <span class="logo-emoji" aria-hidden="true">🕹️</span>
+      <img src="https://openclaw.ai/icon.png" alt="OpenClaw" class="logo-icon" width="64" height="64">
       <h1 class="site-title">JamesClaw</h1>
       <p class="site-subtitle">게임을 선택하고 즐기세요</p>
     </header>
