@@ -45,7 +45,9 @@ async function fetchSymbol(symbol, range, interval) {
     .map((ts, i) => {
       const close = closes[i];
       if (close == null) return null;
-      const date = new Date(ts * 1000).toISOString().split('T')[0];
+      const d = new Date(ts * 1000);
+      const isIntraday = ['1m','5m','15m','30m','60m','1h'].includes(interval);
+      const date = isIntraday ? d.toISOString() : d.toISOString().split('T')[0];
       return { date, close: parseFloat(close.toFixed(4)) };
     })
     .filter(Boolean);

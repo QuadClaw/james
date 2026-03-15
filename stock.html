@@ -608,7 +608,17 @@ function renderCharts(data) {
       return;
     }
 
-    const labels = history.map(h => h.date);
+    const labels = history.map(h => {
+      if (currentPeriod.range === '1d' && h.date.includes('T')) {
+        const d = new Date(h.date);
+        return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+      }
+      if (currentPeriod.range === '1mo') {
+        const parts = h.date.split('-');
+        return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+      }
+      return h.date;
+    });
     const values = history.map(h => h.close);
     const color = CHART_COLORS[i % CHART_COLORS.length];
 
