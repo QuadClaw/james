@@ -36,7 +36,7 @@
       --c4: #fb923c;
     }
 
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
 
     body {
       background: var(--bg-page);
@@ -162,9 +162,48 @@
     }
     .btn-home:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .btn-home .home-label { display: inline; }
-    @media (max-width: 480px) {
+    @media (max-width: 600px) {
+      /* ── Mobile header: compact two-row layout ── */
+      .dashboard-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        padding: 0.6rem var(--gap);
+        /* safe-area for Telegram in-app browser / notched iPhones */
+        padding-top: calc(0.6rem + env(safe-area-inset-top, 0px));
+        /* ensures btn-home can be absolutely positioned within */
+        position: sticky;
+      }
+      .header-left {
+        display: flex;
+        align-items: center;
+      }
+      .header-left h1 {
+        font-size: 1.1rem;
+      }
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: nowrap;
+        font-size: 0.72rem;
+        /* leave right-side space so btn-refresh doesn't overlap home btn */
+        padding-right: 0;
+      }
+      /* Home button pinned to top-right corner of header */
+      .btn-home {
+        position: absolute;
+        top: calc(0.5rem + env(safe-area-inset-top, 0px));
+        right: var(--gap);
+        margin-left: 0;
+        order: unset;
+        min-height: 36px;
+        padding: 0.45rem 0.65rem;
+        font-size: 0.78rem;
+      }
       .btn-home .home-label { display: none; }
-      .btn-home { padding: 0.45rem 0.65rem; }
+      #last-updated      { font-size: 0.72rem; }
+      #auto-refresh-label { font-size: 0.72rem; }
     }
 
     .spinner {
@@ -1160,6 +1199,18 @@ function escapeHtml(str) {
 // ─────────────────────────────────────────────
 //  Init
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+//  Dynamic header height → scroll-margin-top
+//  Recalculates whenever the header reflows (resize / orientation change)
+// ─────────────────────────────────────────────
+function updateScrollMargin() {
+  const header = document.querySelector('.dashboard-header');
+  if (!header) return;
+  document.documentElement.style.setProperty('--header-height', header.offsetHeight + 'px');
+}
+window.addEventListener('resize', updateScrollMargin);
+updateScrollMargin();
+
 renderSkeletons();
 fetchData();
 startAutoRefresh();
