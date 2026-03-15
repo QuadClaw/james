@@ -133,6 +133,36 @@
     .btn-refresh:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    /* ===== Home Button ===== */
+    .btn-home {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.45rem 0.9rem;
+      background: rgba(255,255,255,0.07);
+      color: var(--text-muted);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
+      min-height: 36px;
+      white-space: nowrap;
+    }
+    .btn-home:hover {
+      background: rgba(255,255,255,0.14);
+      color: var(--text);
+      border-color: rgba(255,255,255,0.28);
+    }
+    .btn-home:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .btn-home .home-label { display: inline; }
+    @media (max-width: 480px) {
+      .btn-home .home-label { display: none; }
+      .btn-home { padding: 0.45rem 0.65rem; }
+    }
+
     .spinner {
       display: inline-block;
       width: 14px;
@@ -472,6 +502,9 @@
     <h1>📈 주식투자</h1>
   </div>
   <div class="header-right">
+    <a href="index.html" class="btn-home" aria-label="JamesClaw 메인으로 이동">
+      🏠 <span class="home-label">JamesClaw</span>
+    </a>
     <span id="last-updated" aria-live="polite" aria-atomic="true">—</span>
     <span id="auto-refresh-label" aria-hidden="true">· 30초 자동 갱신</span>
     <button id="btn-refresh" class="btn-refresh" aria-label="데이터 새로고침">
