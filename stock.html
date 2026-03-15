@@ -182,7 +182,7 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
-      min-height: 120px;
+      min-height: 140px;
       cursor: pointer;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
@@ -195,10 +195,11 @@
       outline-offset: 2px;
     }
     .kpi-card__source {
-      font-size: 0.7rem;
-      color: #6b7280;
+      font-size: 0.75rem;
+      color: #9ca3af;
       margin-top: auto;
-      padding-top: 6px;
+      padding-top: 8px;
+      display: block;
     }
 
     .kpi-card__label {
@@ -289,7 +290,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 1.25rem 1.5rem;
-      transition: background-color 0.3s ease;
+      transition: background 0.3s ease, background-color 0.3s ease;
     }
 
     /* Chart card header: title + per-chart period toggle */
@@ -803,7 +804,7 @@ function updateSingleChartCard(ind, i, history) {
   if (!card) return;
 
   // Update background color based on period
-  card.style.backgroundColor = period.range === '1d' ? '#1e293b' : '#1a2234';
+  card.style.setProperty('background', period.range === '1d' ? '#1e293b' : '#0d1f35', 'important');
 
   // Update title text
   const titleEl = card.querySelector('.chart-card__title');
@@ -879,7 +880,7 @@ async function fetchSingleChart(ind, idx) {
   const card = document.getElementById(`chart-${ind.symbol}`);
   if (card) {
     // Update background color optimistically
-    card.style.backgroundColor = period.range === '1d' ? '#1e293b' : '#1a2234';
+    card.style.setProperty('background', period.range === '1d' ? '#1e293b' : '#0d1f35', 'important');
     card.querySelectorAll('.btn-chart-period').forEach(btn => {
       btn.setAttribute('aria-pressed', String(btn.dataset.range === period.range));
       btn.disabled = true;
