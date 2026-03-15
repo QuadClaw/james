@@ -185,7 +185,7 @@
       min-height: 140px;
       cursor: pointer;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
-      scroll-margin-top: 80px;
+      scroll-margin-top: 100px;
     }
     .kpi-card:hover {
       transform: translateY(-2px);
@@ -293,7 +293,7 @@
       padding: 1.25rem 1.5rem;
       transition: background 0.3s ease, background-color 0.3s ease;
       cursor: pointer;
-      scroll-margin-top: 80px;
+      scroll-margin-top: 100px;
     }
 
     /* Chart card header: title + per-chart period toggle */
@@ -339,6 +339,7 @@
       border-radius: 6px;
       padding: 2px;
       flex-shrink: 0;
+      flex-wrap: wrap;
     }
 
     .btn-chart-period {
@@ -525,8 +526,11 @@ const CHART_COLORS = ['#38bdf8','#f59e0b','#22c55e','#a78bfa','#fb923c'];
 
 // Period options
 const PERIOD_OPTIONS = [
-  { range: '1d',  interval: '5m', label: '1일' },
-  { range: '1mo', interval: '1d', label: '1개월' },
+  { id: '1d',  range: '1d',  interval: '5m',  label: '1일' },
+  { id: '1mo', range: '1mo', interval: '1d',  label: '1개월' },
+  { id: '3mo', range: '3mo', interval: '1d',  label: '3개월' },
+  { id: '1y',  range: '1y',  interval: '1wk', label: '1년' },
+  { id: '10y', range: '10y', interval: '1mo', label: '10년' },
 ];
 
 // ─────────────────────────────────────────────
@@ -630,7 +634,7 @@ function renderKPICard(ind, d) {
       </div>
       <div class="kpi-card__value">${formatValue(d.current, ind.unit)}</div>
       <div class="kpi-card__change ${cls}">${arrow}${pct} (${changeAbs})</div>
-      <div class="kpi-card__prev">전일 종가 ${formatValue(d.previousClose, ind.unit)}</div>
+      <div class="kpi-card__prev">${formatPrevCloseDate(d.previousCloseDate)} 종가 ${formatValue(d.previousClose, ind.unit)}</div>
       <div class="kpi-card__source">출처: Yahoo Finance</div>
     </div>
   `;
@@ -777,11 +781,14 @@ function drawChart(ind, i, history) {
       const dt = new Date(h.date);
       return dt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
     }
-    if (period.range === '1mo') {
+    if (period.range === '10y') {
+      // Monthly data → YYYY/M
       const parts = h.date.split('-');
-      return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+      return `${parts[0]}/${parseInt(parts[1])}`;
     }
-    return h.date;
+    // 1mo, 3mo, 1y → M/D
+    const parts = h.date.split('-');
+    return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
   });
   const values = history.map(h => h.close);
   const color  = CHART_COLORS[i % CHART_COLORS.length];
@@ -1046,7 +1053,7 @@ document.getElementById('kpi-grid').addEventListener('click', e => {
   const symbol = card.dataset.symbol;
   if (!symbol) return;
   const chartEl = document.getElementById(`chart-${symbol}`);
-  if (chartEl) chartEl.scrollIntoView({ behavior: 'smooth' });
+  if (chartEl) chartEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
 // Chart card click → scroll to KPI card (period toggle buttons excluded)
@@ -1058,7 +1065,7 @@ document.getElementById('charts-grid').addEventListener('click', e => {
   const symbol = chartCard.id.replace('chart-', '');
   if (!symbol) return;
   const kpiEl = document.getElementById(`kpi-${symbol}`);
-  if (kpiEl) kpiEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (kpiEl) kpiEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
 // Keyboard: Enter/Space on kpi-card → scroll to chart
@@ -1070,7 +1077,7 @@ document.getElementById('kpi-grid').addEventListener('keydown', e => {
   const symbol = card.dataset.symbol;
   if (!symbol) return;
   const chartEl = document.getElementById(`chart-${symbol}`);
-  if (chartEl) chartEl.scrollIntoView({ behavior: 'smooth' });
+  if (chartEl) chartEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
 // ─────────────────────────────────────────────
@@ -1087,6 +1094,20 @@ function formatLastTradeDateSuffix(lastTradeDate) {
   const names = ['일','월','화','수','목','금','토'];
   const dow   = names[d.getUTCDay()];
   return ` (${month}/${day} ${dow})`;
+}
+
+// ─────────────────────────────────────────────
+//  Date label helper for KPI previousCloseDate
+// ─────────────────────────────────────────────
+function formatPrevCloseDate(dateStr) {
+  if (!dateStr) return '전일';
+  // Parse as UTC noon to avoid local TZ shifts
+  const d = new Date(dateStr + 'T12:00:00Z');
+  const month = d.getUTCMonth() + 1;
+  const day   = d.getUTCDate();
+  const names = ['일','월','화','수','목','금','토'];
+  const dow   = names[d.getUTCDay()];
+  return `${month}/${day}(${dow})`;
 }
 
 // ─────────────────────────────────────────────

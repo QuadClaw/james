@@ -85,6 +85,13 @@ async function fetchSymbol(symbol, range, interval) {
   const current = meta.regularMarketPrice ?? meta.previousClose ?? null;
   const previousClose = meta.chartPreviousClose ?? meta.previousClose ?? null;
 
+  // previousCloseDate: regularMarketTime에서 하루 전 날짜 추산
+  let previousCloseDate = null;
+  if (meta.regularMarketTime) {
+    const d = new Date((meta.regularMarketTime - 86400) * 1000);
+    previousCloseDate = d.toISOString().split('T')[0];
+  }
+
   const change = current != null && previousClose != null
     ? parseFloat((current - previousClose).toFixed(4))
     : null;
@@ -98,6 +105,7 @@ async function fetchSymbol(symbol, range, interval) {
     name: info.name,
     current: current != null ? parseFloat(current.toFixed(4)) : null,
     previousClose: previousClose != null ? parseFloat(previousClose.toFixed(4)) : null,
+    previousCloseDate,
     change,
     changePercent,
     currency: meta.currency || info.currency,
