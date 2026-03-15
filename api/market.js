@@ -15,42 +15,72 @@ const SYMBOL_MAP = {
 
 const DEFAULT_SYMBOLS = Object.keys(SYMBOL_MAP);
 
-async function fetchSymbol(symbol, range, interval) {
+async function fetchRawYahoo(symbol, range, interval) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`;
-
   const response = await fetch(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; MarketDashboard/1.0)',
       'Accept': 'application/json',
     },
   });
-
   if (!response.ok) {
     throw new Error(`Yahoo Finance responded with ${response.status} for symbol ${symbol}`);
   }
+  return response.json();
+}
 
-  const json = await response.json();
+function parseHistory(json, interval) {
   const result = json?.chart?.result?.[0];
-
-  if (!result) {
-    throw new Error(`No data returned for symbol ${symbol}`);
-  }
+  if (!result) return { meta: null, history: [] };
 
   const meta = result.meta;
   const timestamps = result.timestamp || [];
   const closes = result.indicators?.quote?.[0]?.close || [];
+  const isIntraday = ['1m','5m','15m','30m','60m','1h'].includes(interval);
 
-  // Build history array
   const history = timestamps
     .map((ts, i) => {
       const close = closes[i];
       if (close == null) return null;
       const d = new Date(ts * 1000);
-      const isIntraday = ['1m','5m','15m','30m','60m','1h'].includes(interval);
       const date = isIntraday ? d.toISOString() : d.toISOString().split('T')[0];
       return { date, close: parseFloat(close.toFixed(4)) };
     })
     .filter(Boolean);
+
+  return { meta, history };
+}
+
+async function fetchSymbol(symbol, range, interval) {
+  const isIntraday = ['1m','5m','15m','30m','60m','1h'].includes(interval);
+
+  const json = await fetchRawYahoo(symbol, range, interval);
+  const { meta, history: rawHistory } = parseHistory(json, interval);
+
+  if (!meta) {
+    throw new Error(`No data returned for symbol ${symbol}`);
+  }
+
+  let history = rawHistory;
+  let lastTradeDate = new Date().toISOString().split('T')[0]; // default: today (UTC)
+
+  // If 1d intraday returns empty history (weekend / after-hours),
+  // retry with 5d and extract only the last trading day's data.
+  if (range === '1d' && isIntraday && history.length === 0) {
+    try {
+      const retryJson = await fetchRawYahoo(symbol, '5d', interval);
+      const { history: fullHistory } = parseHistory(retryJson, interval);
+
+      if (fullHistory.length > 0) {
+        // Determine last trading day from the final entry
+        const lastDateStr = fullHistory[fullHistory.length - 1].date.split('T')[0];
+        history = fullHistory.filter(h => h.date.startsWith(lastDateStr));
+        lastTradeDate = lastDateStr;
+      }
+    } catch (_retryErr) {
+      // Retry failed silently — history stays empty
+    }
+  }
 
   const current = meta.regularMarketPrice ?? meta.previousClose ?? null;
   const previousClose = meta.chartPreviousClose ?? meta.previousClose ?? null;
@@ -64,7 +94,7 @@ async function fetchSymbol(symbol, range, interval) {
 
   const info = SYMBOL_MAP[symbol] || { name: symbol, currency: meta.currency || 'USD' };
 
-  return {
+  const payload = {
     name: info.name,
     current: current != null ? parseFloat(current.toFixed(4)) : null,
     previousClose: previousClose != null ? parseFloat(previousClose.toFixed(4)) : null,
@@ -73,6 +103,13 @@ async function fetchSymbol(symbol, range, interval) {
     currency: meta.currency || info.currency,
     history,
   };
+
+  // Attach lastTradeDate only for 1d intraday requests
+  if (range === '1d' && isIntraday) {
+    payload.lastTradeDate = lastTradeDate;
+  }
+
+  return payload;
 }
 
 module.exports = async (req, res) => {

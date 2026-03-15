@@ -429,6 +429,32 @@
     .btn-retry:hover { background: #7f1d1d; }
     .btn-retry:focus-visible { outline: 2px solid #ef4444; outline-offset: 2px; }
 
+    /* ===== Empty Chart State ===== */
+    .chart-empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 180px;
+      gap: 0.4rem;
+      text-align: center;
+      padding: 1.5rem 1rem;
+    }
+    .chart-empty-state__icon {
+      font-size: 2rem;
+      opacity: 0.55;
+    }
+    .chart-empty-state__title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .chart-empty-state__hint {
+      font-size: 0.76rem;
+      color: #475569;
+      margin-top: 2px;
+    }
+
     /* hidden */
     .hidden { display: none !important; }
   </style>
@@ -636,7 +662,12 @@ function calcChartStats(history, unit) {
 }
 
 function renderChartStatsHTML(stats, unit, indName) {
-  if (!stats) return `<div class="chart-stats"><span class="stat-current" aria-label="${indName} 가격 통계 없음">—</span></div>`;
+  if (!stats) return `
+    <div class="chart-stats" aria-label="${escapeHtml(indName)} 가격 통계 없음">
+      <span class="stat-current">현재 —</span>
+      <span class="stat-high">최고 —</span>
+      <span class="stat-low">최저 —</span>
+    </div>`;
   return `
     <div class="chart-stats" aria-label="${escapeHtml(indName)} 가격 통계">
       <span class="stat-current" aria-label="현재가 ${formatValue(stats.current, unit)}">현재 ${formatValue(stats.current, unit)}</span>
@@ -651,16 +682,20 @@ function renderChartStatsHTML(stats, unit, indName) {
 // ─────────────────────────────────────────────
 
 /** Build chart card HTML for one indicator */
-function buildChartCardHTML(ind, i, history) {
+function buildChartCardHTML(ind, i, history, lastTradeDate) {
   const period = chartPeriods[ind.symbol];
   const stats  = calcChartStats(history, ind.unit);
+
+  // For 1d charts, append date suffix if data is from a past trading day
+  const dateSuffix = period.range === '1d' ? formatLastTradeDateSuffix(lastTradeDate) : '';
+  const titleLabel  = `${escapeHtml(period.label)} 추이${escapeHtml(dateSuffix)}`;
 
   return `
     <div class="chart-card" id="chart-${escapeHtml(ind.symbol)}">
       <div class="chart-card__header">
         <div class="chart-card__title">
           <span aria-hidden="true">${ind.emoji}</span>
-          ${escapeHtml(ind.name)} · ${escapeHtml(period.label)} 추이
+          ${escapeHtml(ind.name)} · ${titleLabel}
         </div>
         <div class="chart-period-toggle" role="group" aria-label="${escapeHtml(ind.name)} 기간 선택">
           ${PERIOD_OPTIONS.map(opt => `
@@ -696,7 +731,8 @@ function renderCharts(data) {
   grid.innerHTML = INDICATORS.map((ind, i) => {
     const d = data[ind.symbol];
     const history = d?.history || [];
-    return buildChartCardHTML(ind, i, history);
+    const lastTradeDate = d?.lastTradeDate || null;
+    return buildChartCardHTML(ind, i, history, lastTradeDate);
   }).join('');
 
   // Draw each chart
@@ -712,12 +748,25 @@ function renderCharts(data) {
 
 /** Draw (or redraw) a single chart */
 function drawChart(ind, i, history) {
-  const period = chartPeriods[ind.symbol];
-  const canvas = document.getElementById(`chart-${i}`);
-  if (!canvas) return;
+  const period  = chartPeriods[ind.symbol];
+  const wrapper = document.getElementById(`chart-canvas-${i}`);
+  const canvas  = document.getElementById(`chart-${i}`);
+  if (!wrapper && !canvas) return;
 
   if (history.length === 0) {
-    canvas.insertAdjacentHTML('afterend', `<p style="color:var(--text-muted);font-size:0.8rem;text-align:center;margin-top:1rem;">데이터 수집 중...</p>`);
+    // 빈 데이터: 캔버스 대신 안내 메시지 표시
+    const emptyHtml = `
+      <div class="chart-empty-state" role="status" aria-label="${escapeHtml(ind.name)} 데이터 없음">
+        <span class="chart-empty-state__icon" aria-hidden="true">📭</span>
+        <p class="chart-empty-state__title">데이터 없음</p>
+        <p class="chart-empty-state__hint">거래 데이터를 가져오지 못했습니다</p>
+      </div>`;
+    if (wrapper) {
+      wrapper.innerHTML = emptyHtml;
+    } else if (canvas) {
+      canvas.style.display = 'none';
+      canvas.insertAdjacentHTML('afterend', emptyHtml);
+    }
     return;
   }
 
@@ -799,7 +848,7 @@ function drawChart(ind, i, history) {
 }
 
 /** Update one chart card after a period change */
-function updateSingleChartCard(ind, i, history) {
+function updateSingleChartCard(ind, i, history, lastTradeDate) {
   const period = chartPeriods[ind.symbol];
   const card   = document.getElementById(`chart-${ind.symbol}`);
   if (!card) return;
@@ -807,10 +856,14 @@ function updateSingleChartCard(ind, i, history) {
   // Update background color based on period
   card.style.setProperty('background', period.range === '1d' ? '#1e293b' : '#2d1b4e', 'important');
 
+  // Build title with optional date suffix for 1d
+  const dateSuffix  = period.range === '1d' ? formatLastTradeDateSuffix(lastTradeDate) : '';
+  const titleLabel  = `${escapeHtml(period.label)} 추이${escapeHtml(dateSuffix)}`;
+
   // Update title text
   const titleEl = card.querySelector('.chart-card__title');
   if (titleEl) {
-    titleEl.innerHTML = `<span aria-hidden="true">${ind.emoji}</span> ${escapeHtml(ind.name)} · ${escapeHtml(period.label)} 추이`;
+    titleEl.innerHTML = `<span aria-hidden="true">${ind.emoji}</span> ${escapeHtml(ind.name)} · ${titleLabel}`;
   }
 
   // Update stats
@@ -893,7 +946,7 @@ async function fetchSingleChart(ind, idx) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     const d    = json.data?.[ind.symbol];
-    updateSingleChartCard(ind, idx, d?.history || []);
+    updateSingleChartCard(ind, idx, d?.history || [], d?.lastTradeDate || null);
   } catch (err) {
     console.error(`fetchSingleChart error [${ind.symbol}]:`, err);
     // Restore buttons on error
@@ -1017,6 +1070,22 @@ document.getElementById('kpi-grid').addEventListener('keydown', e => {
   const chartEl = document.getElementById(`chart-${symbol}`);
   if (chartEl) chartEl.scrollIntoView({ behavior: 'smooth' });
 });
+
+// ─────────────────────────────────────────────
+//  Date label helper for 1d chart title
+// ─────────────────────────────────────────────
+function formatLastTradeDateSuffix(lastTradeDate) {
+  if (!lastTradeDate) return '';
+  const todayUTC = new Date().toISOString().split('T')[0];
+  if (lastTradeDate === todayUTC) return '';
+  // Parse as UTC noon to avoid local TZ shifts
+  const d = new Date(lastTradeDate + 'T12:00:00Z');
+  const month = d.getUTCMonth() + 1;
+  const day   = d.getUTCDate();
+  const names = ['일','월','화','수','목','금','토'];
+  const dow   = names[d.getUTCDay()];
+  return ` (${month}/${day} ${dow})`;
+}
 
 // ─────────────────────────────────────────────
 //  XSS helper
