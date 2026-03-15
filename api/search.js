@@ -25,3 +25,4 @@ module.exports = async (req, res) => {
   res.status(200).json({ results });
 };
 
+/* search API v1 */
