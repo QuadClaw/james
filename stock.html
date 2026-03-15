@@ -275,17 +275,81 @@
       padding: 1.25rem 1.5rem;
     }
 
+    /* Chart card header: title + per-chart period toggle */
+    .chart-card__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
     .chart-card__title {
       font-size: 0.85rem;
       font-weight: 600;
       color: var(--text-muted);
-      margin-bottom: 1rem;
       display: flex;
       align-items: center;
       gap: 0.4rem;
+      flex: 1;
+      min-width: 0;
     }
 
-    .chart-card canvas {
+    /* Per-chart price stats bar */
+    .chart-stats {
+      display: flex;
+      gap: 0.9rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 0.65rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-current { color: #f8fafc; }
+    .stat-high    { color: #22c55e; }
+    .stat-low     { color: #ef4444; }
+
+    /* Per-chart period toggle (compact) */
+    .chart-period-toggle {
+      display: flex;
+      gap: 2px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px;
+      flex-shrink: 0;
+    }
+
+    .btn-chart-period {
+      padding: 0.2rem 0.55rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text-muted);
+      transition: background 150ms ease, color 150ms ease;
+      min-height: 26px;
+      line-height: 1;
+    }
+
+    .btn-chart-period:hover:not([aria-pressed="true"]) {
+      background: #334155;
+      color: var(--text);
+    }
+
+    .btn-chart-period[aria-pressed="true"] {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    .btn-chart-period:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .chart-canvas-wrapper canvas {
       max-height: 220px;
     }
 
@@ -346,45 +410,6 @@
     .btn-retry:hover { background: #7f1d1d; }
     .btn-retry:focus-visible { outline: 2px solid #ef4444; outline-offset: 2px; }
 
-    /* ===== Period Toggle Buttons ===== */
-    .period-toggle {
-      display: flex;
-      gap: 3px;
-      background: #1e293b;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 3px;
-    }
-
-    .btn-period {
-      padding: 0.3rem 0.75rem;
-      border: none;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      background: transparent;
-      color: var(--text-muted);
-      transition: background 150ms ease, color 150ms ease;
-      min-height: 32px;
-      line-height: 1;
-    }
-
-    .btn-period:hover:not([aria-pressed="true"]) {
-      background: #334155;
-      color: var(--text);
-    }
-
-    .btn-period[aria-pressed="true"] {
-      background: #3b82f6;
-      color: #fff;
-    }
-
-    .btn-period:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 2px;
-    }
-
     /* hidden */
     .hidden { display: none !important; }
   </style>
@@ -393,16 +418,12 @@
 
 <a href="#main-content" class="skip-link">본문으로 건너뛰기</a>
 
-<!-- ===== Header ===== -->
+<!-- ===== Header (global period toggle removed) ===== -->
 <header class="dashboard-header" role="banner">
   <div class="header-left">
     <h1>📈 주식투자</h1>
   </div>
   <div class="header-right">
-    <div class="period-toggle" role="group" aria-label="기간 선택">
-      <button class="btn-period" id="btn-1d"  aria-pressed="true"  data-range="1d"  data-interval="5m">1일</button>
-      <button class="btn-period" id="btn-1mo" aria-pressed="false" data-range="1mo" data-interval="1d">1개월</button>
-    </div>
     <span id="last-updated" aria-live="polite" aria-atomic="true">—</span>
     <span id="auto-refresh-label" aria-hidden="true">· 30초 자동 갱신</span>
     <button id="btn-refresh" class="btn-refresh" aria-label="데이터 새로고침">
@@ -431,7 +452,7 @@
 
   <!-- Charts -->
   <section class="charts-section" aria-label="추이 차트">
-    <p class="section-label" id="charts-section-label">1일 추이</p>
+    <p class="section-label">추이 차트</p>
     <div id="charts-grid" class="charts-grid" aria-live="polite" aria-atomic="false">
       <!-- Skeleton -->
     </div>
@@ -455,20 +476,24 @@ const INDICATORS = [
 // Chart colors per indicator index
 const CHART_COLORS = ['#38bdf8','#f59e0b','#22c55e','#a78bfa','#fb923c'];
 
+// Period options
+const PERIOD_OPTIONS = [
+  { range: '1d',  interval: '5m', label: '1일' },
+  { range: '1mo', interval: '1d', label: '1개월' },
+];
+
 // ─────────────────────────────────────────────
 //  State
 // ─────────────────────────────────────────────
-let charts = {};           // symbol → Chart instance
+let charts = {};               // symbol → Chart instance
 let autoRefreshTimer = null;
 let isLoading = false;
 
-// Period state — default: 1일 (range=1d, interval=5m)
-let currentPeriod = { range: '1d', interval: '5m', label: '1일' };
-
-const PERIOD_OPTIONS = [
-  { id: 'btn-1d',  range: '1d',  interval: '5m', label: '1일' },
-  { id: 'btn-1mo', range: '1mo', interval: '1d', label: '1개월' },
-];
+// Per-chart period state — default: 1일
+const chartPeriods = {};       // symbol → { range, interval, label }
+INDICATORS.forEach(ind => {
+  chartPeriods[ind.symbol] = { ...PERIOD_OPTIONS[0] };
+});
 
 // ─────────────────────────────────────────────
 //  Helpers
@@ -531,7 +556,7 @@ function renderSkeletons() {
 }
 
 // ─────────────────────────────────────────────
-//  KPI Card Rendering
+//  KPI Card Rendering (변동률은 항상 전일 대비)
 // ─────────────────────────────────────────────
 function renderKPICards(data) {
   const grid = document.getElementById('kpi-grid');
@@ -548,7 +573,6 @@ function renderKPICard(ind, d) {
   const arrow = changeArrow(d.changePercent);
   const pct = d.changePercent != null ? `${Math.abs(d.changePercent).toFixed(2)}%` : '—';
   const changeAbs = d.change != null ? formatValue(Math.abs(d.change), ind.unit) : '—';
-  const prevLabel = currentPeriod.range === '1d' ? '전일 종가' : '1개월 전 종가';
 
   return `
     <div class="kpi-card" tabindex="0" aria-label="${ind.name} ${formatValue(d.current, ind.unit)} ${ind.unit}">
@@ -559,7 +583,7 @@ function renderKPICard(ind, d) {
       </div>
       <div class="kpi-card__value">${formatValue(d.current, ind.unit)}</div>
       <div class="kpi-card__change ${cls}">${arrow}${pct} (${changeAbs})</div>
-      <div class="kpi-card__prev">${prevLabel} ${formatValue(d.previousClose, ind.unit)}</div>
+      <div class="kpi-card__prev">전일 종가 ${formatValue(d.previousClose, ind.unit)}</div>
     </div>
   `;
 }
@@ -578,8 +602,69 @@ function renderKPIError(ind, msg) {
 }
 
 // ─────────────────────────────────────────────
+//  Chart Stats (현재/최고/최저)
+// ─────────────────────────────────────────────
+function calcChartStats(history, unit) {
+  if (!history || history.length === 0) return null;
+  const closes = history.map(h => h.close).filter(v => v != null);
+  if (closes.length === 0) return null;
+  const current = closes[closes.length - 1];
+  const high    = Math.max(...closes);
+  const low     = Math.min(...closes);
+  return { current, high, low };
+}
+
+function renderChartStatsHTML(stats, unit, indName) {
+  if (!stats) return `<div class="chart-stats"><span class="stat-current" aria-label="${indName} 가격 통계 없음">—</span></div>`;
+  return `
+    <div class="chart-stats" aria-label="${escapeHtml(indName)} 가격 통계">
+      <span class="stat-current" aria-label="현재가 ${formatValue(stats.current, unit)}">현재 ${formatValue(stats.current, unit)}</span>
+      <span class="stat-high"    aria-label="최고가 ${formatValue(stats.high, unit)}">최고 ${formatValue(stats.high, unit)}</span>
+      <span class="stat-low"     aria-label="최저가 ${formatValue(stats.low, unit)}">최저 ${formatValue(stats.low, unit)}</span>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────
 //  Chart Rendering
 // ─────────────────────────────────────────────
+
+/** Build chart card HTML for one indicator */
+function buildChartCardHTML(ind, i, history) {
+  const period = chartPeriods[ind.symbol];
+  const stats  = calcChartStats(history, ind.unit);
+
+  return `
+    <div class="chart-card" id="chart-card-${i}">
+      <div class="chart-card__header">
+        <div class="chart-card__title">
+          <span aria-hidden="true">${ind.emoji}</span>
+          ${escapeHtml(ind.name)} · ${escapeHtml(period.label)} 추이
+        </div>
+        <div class="chart-period-toggle" role="group" aria-label="${escapeHtml(ind.name)} 기간 선택">
+          ${PERIOD_OPTIONS.map(opt => `
+            <button
+              class="btn-chart-period"
+              data-idx="${i}"
+              data-symbol="${escapeHtml(ind.symbol)}"
+              data-range="${opt.range}"
+              data-interval="${opt.interval}"
+              data-label="${opt.label}"
+              aria-pressed="${period.range === opt.range}"
+              aria-label="${escapeHtml(ind.name)} ${opt.label} 보기"
+            >${opt.label}</button>
+          `).join('')}
+        </div>
+      </div>
+      ${renderChartStatsHTML(stats, ind.unit, ind.name)}
+      <div class="chart-canvas-wrapper" id="chart-canvas-${i}">
+        <canvas id="chart-${i}" aria-label="${escapeHtml(ind.name)} ${escapeHtml(period.label)} 추이 차트" role="img"></canvas>
+      </div>
+    </div>
+  `;
+}
+
+/** Render full charts grid */
 function renderCharts(data) {
   const grid = document.getElementById('charts-grid');
 
@@ -587,102 +672,174 @@ function renderCharts(data) {
   Object.values(charts).forEach(c => c.destroy());
   charts = {};
 
-  grid.innerHTML = INDICATORS.map((ind, i) => `
-    <div class="chart-card">
-      <div class="chart-card__title">
-        <span aria-hidden="true">${ind.emoji}</span>
-        ${escapeHtml(ind.name)} · ${currentPeriod.label} 추이
-      </div>
-      <canvas id="chart-${i}" aria-label="${ind.name} ${currentPeriod.label} 추이 차트" role="img"></canvas>
-    </div>
-  `).join('');
+  grid.innerHTML = INDICATORS.map((ind, i) => {
+    const d = data[ind.symbol];
+    const history = d?.history || [];
+    return buildChartCardHTML(ind, i, history);
+  }).join('');
 
+  // Draw each chart
   INDICATORS.forEach((ind, i) => {
     const d = data[ind.symbol];
-    const canvas = document.getElementById(`chart-${i}`);
-    if (!canvas) return;
-
     const history = d?.history || [];
-    if (history.length === 0) {
-      canvas.parentElement.innerHTML += `<p style="color:var(--text-muted);font-size:0.8rem;text-align:center;margin-top:1rem;">데이터 수집 중...</p>`;
-      return;
+    drawChart(ind, i, history);
+  });
+
+  // Attach per-chart period button listeners
+  attachChartPeriodListeners();
+}
+
+/** Draw (or redraw) a single chart */
+function drawChart(ind, i, history) {
+  const period = chartPeriods[ind.symbol];
+  const canvas = document.getElementById(`chart-${i}`);
+  if (!canvas) return;
+
+  if (history.length === 0) {
+    canvas.insertAdjacentHTML('afterend', `<p style="color:var(--text-muted);font-size:0.8rem;text-align:center;margin-top:1rem;">데이터 수집 중...</p>`);
+    return;
+  }
+
+  const labels = history.map(h => {
+    if (period.range === '1d' && h.date.includes('T')) {
+      const dt = new Date(h.date);
+      return dt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
     }
+    if (period.range === '1mo') {
+      const parts = h.date.split('-');
+      return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+    }
+    return h.date;
+  });
+  const values = history.map(h => h.close);
+  const color  = CHART_COLORS[i % CHART_COLORS.length];
+  const ctx    = canvas.getContext('2d');
 
-    const labels = history.map(h => {
-      if (currentPeriod.range === '1d' && h.date.includes('T')) {
-        const d = new Date(h.date);
-        return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
-      }
-      if (currentPeriod.range === '1mo') {
-        const parts = h.date.split('-');
-        return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
-      }
-      return h.date;
-    });
-    const values = history.map(h => h.close);
-    const color = CHART_COLORS[i % CHART_COLORS.length];
+  // Gradient fill
+  const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+  gradient.addColorStop(0, color + '33');
+  gradient.addColorStop(1, color + '00');
 
-    const ctx = canvas.getContext('2d');
-
-    // Gradient fill
-    const gradient = ctx.createLinearGradient(0, 0, 0, 220);
-    gradient.addColorStop(0, color + '33');
-    gradient.addColorStop(1, color + '00');
-
-    charts[ind.symbol] = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          label: ind.name,
-          data: values,
-          borderColor: color,
-          backgroundColor: gradient,
-          borderWidth: 2,
-          fill: true,
-          tension: 0.3,
-          pointRadius: 0,
-          pointHoverRadius: 5,
-          pointHoverBackgroundColor: color,
-        }]
+  charts[ind.symbol] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: ind.name,
+        data: values,
+        borderColor: color,
+        backgroundColor: gradient,
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: color,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 400 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e293b',
+          borderColor: '#334155',
+          borderWidth: 1,
+          titleColor: '#94a3b8',
+          bodyColor: '#f8fafc',
+          callbacks: {
+            label: ctx => ` ${formatValue(ctx.parsed.y, ind.unit)} ${ind.unit}`,
+          }
+        }
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 400 },
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: '#1e293b',
-            borderColor: '#334155',
-            borderWidth: 1,
-            titleColor: '#94a3b8',
-            bodyColor: '#f8fafc',
-            callbacks: {
-              label: ctx => ` ${formatValue(ctx.parsed.y, ind.unit)} ${ind.unit}`,
-            }
+      scales: {
+        x: {
+          grid: { color: '#1e293b' },
+          ticks: {
+            color: '#64748b',
+            maxTicksLimit: 6,
+            font: { size: 11 },
           }
         },
-        scales: {
-          x: {
-            grid: { color: '#1e293b' },
-            ticks: {
-              color: '#64748b',
-              maxTicksLimit: 6,
-              font: { size: 11 },
-            }
-          },
-          y: {
-            grid: { color: '#1e293b' },
-            ticks: {
-              color: '#64748b',
-              font: { size: 11 },
-              callback: v => formatValue(v, ind.unit),
-            }
+        y: {
+          grid: { color: '#1e293b' },
+          ticks: {
+            color: '#64748b',
+            font: { size: 11 },
+            callback: v => formatValue(v, ind.unit),
           }
         }
       }
+    }
+  });
+}
+
+/** Update one chart card after a period change */
+function updateSingleChartCard(ind, i, history) {
+  const period = chartPeriods[ind.symbol];
+  const card   = document.getElementById(`chart-card-${i}`);
+  if (!card) return;
+
+  // Update title text
+  const titleEl = card.querySelector('.chart-card__title');
+  if (titleEl) {
+    titleEl.innerHTML = `<span aria-hidden="true">${ind.emoji}</span> ${escapeHtml(ind.name)} · ${escapeHtml(period.label)} 추이`;
+  }
+
+  // Update stats
+  const statsEl = card.querySelector('.chart-stats');
+  if (statsEl) {
+    const stats = calcChartStats(history, ind.unit);
+    statsEl.outerHTML = renderChartStatsHTML(stats, ind.unit, ind.name);
+  }
+
+  // Update aria-pressed on period buttons
+  card.querySelectorAll('.btn-chart-period').forEach(btn => {
+    btn.setAttribute('aria-pressed', String(btn.dataset.range === period.range));
+  });
+
+  // Destroy old chart instance
+  if (charts[ind.symbol]) {
+    charts[ind.symbol].destroy();
+    delete charts[ind.symbol];
+  }
+
+  // Replace canvas (Chart.js needs a fresh canvas)
+  const wrapper = document.getElementById(`chart-canvas-${i}`);
+  if (wrapper) {
+    wrapper.innerHTML = `<canvas id="chart-${i}" aria-label="${escapeHtml(ind.name)} ${escapeHtml(period.label)} 추이 차트" role="img"></canvas>`;
+  }
+
+  // Redraw
+  drawChart(ind, i, history);
+}
+
+// ─────────────────────────────────────────────
+//  Per-chart period button listeners
+// ─────────────────────────────────────────────
+function attachChartPeriodListeners() {
+  document.querySelectorAll('.btn-chart-period').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const symbol   = btn.dataset.symbol;
+      const range    = btn.dataset.range;
+      const interval = btn.dataset.interval;
+      const label    = btn.dataset.label;
+      const idx      = parseInt(btn.dataset.idx, 10);
+
+      const ind = INDICATORS.find(i => i.symbol === symbol);
+      if (!ind) return;
+
+      // No-op if already selected
+      if (chartPeriods[symbol].range === range) return;
+
+      // Update period state
+      chartPeriods[symbol] = { range, interval, label };
+
+      // Fetch data for this symbol only
+      fetchSingleChart(ind, idx);
     });
   });
 }
@@ -690,30 +847,81 @@ function renderCharts(data) {
 // ─────────────────────────────────────────────
 //  Data Fetching
 // ─────────────────────────────────────────────
-async function fetchData() {
-  if (isLoading) return;
-  isLoading = true;
 
-  const btn = document.getElementById('btn-refresh');
-  const icon = document.getElementById('refresh-icon');
-  btn.disabled = true;
-  icon.outerHTML = `<span id="refresh-icon" class="spinner" aria-hidden="true"></span>`;
+/** Fetch data for a single chart (period change) */
+async function fetchSingleChart(ind, idx) {
+  const period = chartPeriods[ind.symbol];
+  const url = `/api/market?symbols=${encodeURIComponent(ind.symbol)}&range=${period.range}&interval=${period.interval}`;
 
-  const symbols = INDICATORS.map(i => i.symbol).join(',');
-  const url = `/api/market?symbols=${encodeURIComponent(symbols)}&range=${currentPeriod.range}&interval=${currentPeriod.interval}`;
+  // Optimistic: update aria-pressed immediately
+  const card = document.getElementById(`chart-card-${idx}`);
+  if (card) {
+    card.querySelectorAll('.btn-chart-period').forEach(btn => {
+      btn.setAttribute('aria-pressed', String(btn.dataset.range === period.range));
+      btn.disabled = true;
+    });
+  }
 
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
+    const d    = json.data?.[ind.symbol];
+    updateSingleChartCard(ind, idx, d?.history || []);
+  } catch (err) {
+    console.error(`fetchSingleChart error [${ind.symbol}]:`, err);
+    // Restore buttons on error
+    if (card) {
+      card.querySelectorAll('.btn-chart-period').forEach(btn => btn.disabled = false);
+    }
+  } finally {
+    if (card) {
+      card.querySelectorAll('.btn-chart-period').forEach(btn => btn.disabled = false);
+    }
+  }
+}
+
+/** Full fetch: all charts grouped by period (initial load + auto-refresh) */
+async function fetchData() {
+  if (isLoading) return;
+  isLoading = true;
+
+  const btn  = document.getElementById('btn-refresh');
+  const icon = document.getElementById('refresh-icon');
+  btn.disabled = true;
+  icon.outerHTML = `<span id="refresh-icon" class="spinner" aria-hidden="true"></span>`;
+
+  try {
+    // Group symbols by period
+    const groups = new Map(); // "range|interval" → { period, symbols[] }
+    INDICATORS.forEach(ind => {
+      const p   = chartPeriods[ind.symbol];
+      const key = `${p.range}|${p.interval}`;
+      if (!groups.has(key)) groups.set(key, { period: p, symbols: [] });
+      groups.get(key).symbols.push(ind.symbol);
+    });
+
+    // Fetch each group and merge results
+    const allData = {};
+    let latestUpdatedAt = null;
+
+    for (const [, group] of groups) {
+      const { period, symbols } = group;
+      const url = `/api/market?symbols=${encodeURIComponent(symbols.join(','))}&range=${period.range}&interval=${period.interval}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      Object.assign(allData, json.data);
+      latestUpdatedAt = json.updatedAt;
+    }
 
     document.getElementById('error-banner').classList.add('hidden');
-    // Update section label
-    document.getElementById('charts-section-label').textContent = `${currentPeriod.label} 추이`;
-    renderKPICards(json.data);
-    renderCharts(json.data);
 
-    const ts = formatDate(json.updatedAt);
+    // Always render KPI from fetched data (changePercent is always "전일 대비")
+    renderKPICards(allData);
+    renderCharts(allData);
+
+    const ts = formatDate(latestUpdatedAt);
     document.getElementById('last-updated').textContent = `업데이트: ${ts}`;
   } catch (err) {
     console.error('fetchData error:', err);
@@ -721,7 +929,7 @@ async function fetchData() {
     document.getElementById('last-updated').textContent = '데이터 로드 실패';
   } finally {
     isLoading = false;
-    const btnAfter = document.getElementById('btn-refresh');
+    const btnAfter  = document.getElementById('btn-refresh');
     btnAfter.disabled = false;
     const spinnerEl = document.getElementById('refresh-icon');
     if (spinnerEl && spinnerEl.classList.contains('spinner')) {
@@ -737,30 +945,6 @@ function startAutoRefresh() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
   autoRefreshTimer = setInterval(fetchData, 30000);
 }
-
-// ─────────────────────────────────────────────
-//  Period Toggle
-// ─────────────────────────────────────────────
-function setPeriod(option) {
-  if (currentPeriod.range === option.range) return; // no-op if already selected
-  currentPeriod = { range: option.range, interval: option.interval, label: option.label };
-
-  // Update aria-pressed on all buttons
-  PERIOD_OPTIONS.forEach(opt => {
-    const el = document.getElementById(opt.id);
-    if (el) el.setAttribute('aria-pressed', String(opt.range === option.range));
-  });
-
-  // Show skeletons and fetch fresh data
-  renderSkeletons();
-  fetchData();
-  startAutoRefresh(); // reset interval
-}
-
-PERIOD_OPTIONS.forEach(opt => {
-  const el = document.getElementById(opt.id);
-  if (el) el.addEventListener('click', () => setPeriod(opt));
-});
 
 // ─────────────────────────────────────────────
 //  Event Listeners
