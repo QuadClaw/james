@@ -308,12 +308,6 @@
       opacity: 0.8;
     }
 
-    .kpi-card__prev {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
     .kpi-card__error {
       font-size: 0.82rem;
       color: var(--negative);
@@ -722,7 +716,6 @@ function renderKPICard(ind, d) {
       <div class="kpi-card__value">${formatValue(d.current, ind.unit)}</div>
       ${lastDateHTML}
       <div class="kpi-card__change ${cls}">${arrow}${pct} (전일대비)</div>
-      <div class="kpi-card__prev">전일 종가: ${formatValue(d.previousClose, ind.unit)}</div>
       <div class="kpi-card__source">출처: Yahoo Finance</div>
     </div>
   `;
@@ -782,14 +775,14 @@ function buildChartCardHTML(ind, i, history, lastTradeDate) {
 
   // For 1d charts, append date suffix if data is from a past trading day
   const dateSuffix = period.range === '1d' ? formatLastTradeDateSuffix(lastTradeDate) : '';
-  const titleLabel  = `${escapeHtml(period.label)} 추이${escapeHtml(dateSuffix)}`;
+  const titleLabel  = dateSuffix ? escapeHtml(dateSuffix) : '';
 
   return `
     <div class="chart-card" id="chart-${escapeHtml(ind.symbol)}">
       <div class="chart-card__header">
         <div class="chart-card__title">
           <span aria-hidden="true">${ind.emoji}</span>
-          ${escapeHtml(ind.name)} · ${titleLabel}
+          ${escapeHtml(ind.name)}${titleLabel ? ` ${titleLabel}` : ''}
         </div>
         <div class="chart-period-toggle" role="group" aria-label="${escapeHtml(ind.name)} 기간 선택">
           ${PERIOD_OPTIONS.map(opt => `
@@ -808,7 +801,7 @@ function buildChartCardHTML(ind, i, history, lastTradeDate) {
       </div>
       ${renderChartStatsHTML(stats, ind.unit, ind.name)}
       <div class="chart-canvas-wrapper" id="chart-canvas-${i}">
-        <canvas id="chart-${i}" aria-label="${escapeHtml(ind.name)} ${escapeHtml(period.label)} 추이 차트" role="img"></canvas>
+        <canvas id="chart-${i}" aria-label="${escapeHtml(ind.name)} 차트" role="img"></canvas>
       </div>
     </div>
   `;
@@ -955,12 +948,12 @@ function updateSingleChartCard(ind, i, history, lastTradeDate) {
 
   // Build title with optional date suffix for 1d
   const dateSuffix  = period.range === '1d' ? formatLastTradeDateSuffix(lastTradeDate) : '';
-  const titleLabel  = `${escapeHtml(period.label)} 추이${escapeHtml(dateSuffix)}`;
+  const titleLabel  = dateSuffix ? escapeHtml(dateSuffix) : '';
 
   // Update title text
   const titleEl = card.querySelector('.chart-card__title');
   if (titleEl) {
-    titleEl.innerHTML = `<span aria-hidden="true">${ind.emoji}</span> ${escapeHtml(ind.name)} · ${titleLabel}`;
+    titleEl.innerHTML = `<span aria-hidden="true">${ind.emoji}</span> ${escapeHtml(ind.name)}${titleLabel ? ` ${titleLabel}` : ''}`;
   }
 
   // Update stats
@@ -984,7 +977,7 @@ function updateSingleChartCard(ind, i, history, lastTradeDate) {
   // Replace canvas (Chart.js needs a fresh canvas)
   const wrapper = document.getElementById(`chart-canvas-${i}`);
   if (wrapper) {
-    wrapper.innerHTML = `<canvas id="chart-${i}" aria-label="${escapeHtml(ind.name)} ${escapeHtml(period.label)} 추이 차트" role="img"></canvas>`;
+    wrapper.innerHTML = `<canvas id="chart-${i}" aria-label="${escapeHtml(ind.name)} 차트" role="img"></canvas>`;
   }
 
   // Redraw
