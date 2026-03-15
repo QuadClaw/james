@@ -258,7 +258,7 @@
       min-height: 140px;
       cursor: pointer;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
-      scroll-margin-top: calc(var(--header-height) + 16px);
+      scroll-margin-top: calc(var(--header-height) + var(--tab-bar-height, 44px) + 16px);
     }
     .kpi-card:hover {
       transform: translateY(-2px);
@@ -367,7 +367,7 @@
       padding: 1.25rem 1.5rem;
       transition: background 0.3s ease, background-color 0.3s ease;
       cursor: pointer;
-      scroll-margin-top: calc(var(--header-height) + 16px);
+      scroll-margin-top: calc(var(--header-height) + var(--tab-bar-height, 44px) + 16px);
     }
 
     /* Chart card header: title + per-chart period toggle */
@@ -534,6 +534,37 @@
 
     /* hidden */
     .hidden { display: none !important; }
+
+    /* ===== Tab Bar ===== */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      background: #131c2e;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: var(--header-height, 70px);
+      z-index: 99;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tab-btn {
+      padding: 0.75rem 1.5rem;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   </style>
 </head>
 <body>
@@ -558,8 +589,16 @@
   </div>
 </header>
 
+<!-- ===== Tab Bar ===== -->
+<nav class="tab-bar" role="tablist" aria-label="데이터 카테고리">
+  <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="panel-main" id="tab-main">📊 주요정보</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-stocks" id="tab-stocks">📱 개별종목</button>
+</nav>
+
 <!-- ===== Main ===== -->
 <main id="main-content" class="container">
+
+  <div id="panel-main" role="tabpanel" aria-labelledby="tab-main">
 
   <!-- Error banner (hidden by default) -->
   <div id="error-banner" class="error-banner hidden" role="alert">
@@ -582,6 +621,19 @@
       <!-- Skeleton -->
     </div>
   </section>
+
+  </div><!-- /panel-main -->
+
+  <div id="panel-stocks" role="tabpanel" aria-labelledby="tab-stocks" style="display:none;">
+    <section class="kpi-section" aria-label="개별종목 KPI">
+      <p class="section-label">개별종목 실시간</p>
+      <div class="kpi-grid" id="stocks-kpi-grid" aria-live="polite" aria-atomic="false"></div>
+    </section>
+    <section class="charts-section" aria-label="개별종목 차트">
+      <p class="section-label">개별종목 차트</p>
+      <div class="charts-grid" id="stocks-charts-grid" aria-live="polite" aria-atomic="false"></div>
+    </section>
+  </div><!-- /panel-stocks -->
 
 </main>
 
@@ -614,13 +666,28 @@ const PERIOD_OPTIONS = [
 //  State
 // ─────────────────────────────────────────────
 let charts = {};               // symbol → Chart instance
+let stockCharts = {};          // symbol → Chart instance (개별종목)
 let autoRefreshTimer = null;
 let isLoading = false;
+let isStocksLoading = false;
 
 // Per-chart period state — default: 1일
 const chartPeriods = {};       // symbol → { range, interval, label }
 INDICATORS.forEach(ind => {
   chartPeriods[ind.symbol] = { ...PERIOD_OPTIONS[0] };
+});
+
+// ─────────────────────────────────────────────
+//  개별종목 목록
+// ─────────────────────────────────────────────
+const STOCKS = [
+  { symbol: '005930.KS', name: '삼성전자',  unit: '원', emoji: '📱' },
+  { symbol: '000660.KS', name: 'SK하이닉스', unit: '원', emoji: '💾' },
+];
+
+const stockChartPeriods = {};
+STOCKS.forEach(s => {
+  stockChartPeriods[s.symbol] = { ...PERIOD_OPTIONS[0] };
 });
 
 // ─────────────────────────────────────────────
@@ -1110,8 +1177,373 @@ async function fetchData() {
 // ─────────────────────────────────────────────
 function startAutoRefresh() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-  autoRefreshTimer = setInterval(fetchData, 30000);
+  autoRefreshTimer = setInterval(() => {
+    if (activeTab === 'stocks') {
+      fetchStocksData();
+    } else {
+      fetchData();
+    }
+  }, 30000);
 }
+
+// ─────────────────────────────────────────────
+//  개별종목 — Skeletons
+// ─────────────────────────────────────────────
+function renderStocksSkeletons() {
+  const kpiGrid    = document.getElementById('stocks-kpi-grid');
+  const chartsGrid = document.getElementById('stocks-charts-grid');
+
+  kpiGrid.innerHTML = STOCKS.map(() => `
+    <div class="skeleton" aria-hidden="true">
+      <div class="skel-line" style="width:60%;height:12px;"></div>
+      <div class="skel-line" style="width:80%;height:32px;"></div>
+      <div class="skel-line" style="width:50%;height:12px;"></div>
+    </div>
+  `).join('');
+
+  chartsGrid.innerHTML = STOCKS.map(() => `
+    <div class="chart-skeleton" aria-hidden="true">
+      <div class="chart-skel-bar" style="width:45%;height:12px;margin-bottom:16px;"></div>
+      <div style="display:flex;align-items:flex-end;gap:4px;height:160px;margin-bottom:8px;">
+        ${Array.from({length:20},(_,i)=>`<div class="chart-skel-bar" style="flex:1;height:${20+Math.sin(i)*40+40}px;opacity:${0.3+i*0.03};"></div>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─────────────────────────────────────────────
+//  개별종목 — KPI Cards
+// ─────────────────────────────────────────────
+function renderStocksKPICards(data) {
+  const grid = document.getElementById('stocks-kpi-grid');
+  grid.innerHTML = STOCKS.map(ind => {
+    const d = data[ind.symbol];
+    if (!d)      return renderKPIError(ind, '데이터 없음');
+    if (d.error) return renderKPIError(ind, d.error);
+    return renderKPICard(ind, d);
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+//  개별종목 — Chart Card HTML
+// ─────────────────────────────────────────────
+function buildStocksChartCardHTML(ind, i, history, lastTradeDate) {
+  const period = stockChartPeriods[ind.symbol];
+  const stats  = calcChartStats(history, ind.unit);
+  const dateSuffix = period.range === '1d' ? formatLastTradeDateSuffix(lastTradeDate) : '';
+  const titleLabel  = dateSuffix ? escapeHtml(dateSuffix) : '';
+
+  return `
+    <div class="chart-card" id="chart-${escapeHtml(ind.symbol)}">
+      <div class="chart-card__header">
+        <div class="chart-card__title">
+          <span aria-hidden="true">${ind.emoji}</span>
+          ${escapeHtml(ind.name)}${titleLabel ? ` ${titleLabel}` : ''}
+        </div>
+        <div class="chart-period-toggle" role="group" aria-label="${escapeHtml(ind.name)} 기간 선택">
+          ${PERIOD_OPTIONS.map(opt => `
+            <button
+              class="btn-chart-period btn-stocks-period"
+              data-idx="${i}"
+              data-symbol="${escapeHtml(ind.symbol)}"
+              data-range="${opt.range}"
+              data-interval="${opt.interval}"
+              data-label="${opt.label}"
+              aria-pressed="${period.range === opt.range}"
+              aria-label="${escapeHtml(ind.name)} ${opt.label} 보기"
+            >${opt.label}</button>
+          `).join('')}
+        </div>
+      </div>
+      ${renderChartStatsHTML(stats, ind.unit, ind.name)}
+      <div class="chart-canvas-wrapper" id="schart-canvas-${i}">
+        <canvas id="schart-${i}" aria-label="${escapeHtml(ind.name)} 차트" role="img"></canvas>
+      </div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────
+//  개별종목 — Draw Chart
+// ─────────────────────────────────────────────
+function drawStocksChart(ind, i, history) {
+  const period  = stockChartPeriods[ind.symbol];
+  const wrapper = document.getElementById(`schart-canvas-${i}`);
+  const canvas  = document.getElementById(`schart-${i}`);
+  if (!wrapper && !canvas) return;
+
+  if (history.length === 0) {
+    const emptyHtml = `
+      <div class="chart-empty-state" role="status" aria-label="${escapeHtml(ind.name)} 데이터 없음">
+        <span class="chart-empty-state__icon" aria-hidden="true">📭</span>
+        <p class="chart-empty-state__title">데이터 없음</p>
+        <p class="chart-empty-state__hint">거래 데이터를 가져오지 못했습니다</p>
+      </div>`;
+    if (wrapper) wrapper.innerHTML = emptyHtml;
+    return;
+  }
+
+  const labels = history.map(h => {
+    if (period.range === '1d' && h.date.includes('T')) {
+      const dt = new Date(h.date);
+      return dt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+    if (period.range === '10y') {
+      const parts = h.date.split('-');
+      return `${parts[0]}/${parseInt(parts[1])}`;
+    }
+    const parts = h.date.split('-');
+    return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+  });
+  const values = history.map(h => h.close);
+  const color  = CHART_COLORS[i % CHART_COLORS.length];
+  const ctx    = canvas.getContext('2d');
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+  gradient.addColorStop(0, color + '33');
+  gradient.addColorStop(1, color + '00');
+
+  stockCharts[ind.symbol] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: ind.name,
+        data: values,
+        borderColor: color,
+        backgroundColor: gradient,
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: color,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 400 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e293b',
+          borderColor: '#334155',
+          borderWidth: 1,
+          titleColor: '#94a3b8',
+          bodyColor: '#f8fafc',
+          callbacks: {
+            label: ctx => ` ${formatValue(ctx.parsed.y, ind.unit)} ${ind.unit}`,
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#1e293b' },
+          ticks: { color: '#64748b', maxTicksLimit: 6, font: { size: 11 } }
+        },
+        y: {
+          grid: { color: '#1e293b' },
+          ticks: { color: '#64748b', font: { size: 11 }, callback: v => formatValue(v, ind.unit) }
+        }
+      }
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+//  개별종목 — Render Charts Grid
+// ─────────────────────────────────────────────
+function renderStocksCharts(data) {
+  const grid = document.getElementById('stocks-charts-grid');
+  Object.values(stockCharts).forEach(c => c.destroy());
+  stockCharts = {};
+
+  grid.innerHTML = STOCKS.map((ind, i) => {
+    const d = data[ind.symbol];
+    return buildStocksChartCardHTML(ind, i, d?.history || [], d?.lastTradeDate || null);
+  }).join('');
+
+  STOCKS.forEach((ind, i) => {
+    drawStocksChart(ind, i, data[ind.symbol]?.history || []);
+  });
+
+  attachStocksChartPeriodListeners();
+}
+
+// ─────────────────────────────────────────────
+//  개별종목 — Update Single Chart Card (period change)
+// ─────────────────────────────────────────────
+function updateSingleStocksChartCard(ind, i, history, lastTradeDate) {
+  const period = stockChartPeriods[ind.symbol];
+  const card   = document.getElementById(`chart-${ind.symbol}`);
+  if (!card) return;
+
+  card.style.setProperty('background', period.range === '1d' ? '#1e293b' : '#2d1b4e', 'important');
+
+  const dateSuffix = period.range === '1d' ? formatLastTradeDateSuffix(lastTradeDate) : '';
+  const titleLabel = dateSuffix ? escapeHtml(dateSuffix) : '';
+
+  const titleEl = card.querySelector('.chart-card__title');
+  if (titleEl) {
+    titleEl.innerHTML = `<span aria-hidden="true">${ind.emoji}</span> ${escapeHtml(ind.name)}${titleLabel ? ` ${titleLabel}` : ''}`;
+  }
+
+  const statsEl = card.querySelector('.chart-stats');
+  if (statsEl) {
+    const stats = calcChartStats(history, ind.unit);
+    statsEl.outerHTML = renderChartStatsHTML(stats, ind.unit, ind.name);
+  }
+
+  card.querySelectorAll('.btn-stocks-period').forEach(btn => {
+    btn.setAttribute('aria-pressed', String(btn.dataset.range === period.range));
+  });
+
+  if (stockCharts[ind.symbol]) {
+    stockCharts[ind.symbol].destroy();
+    delete stockCharts[ind.symbol];
+  }
+
+  const wrapper = document.getElementById(`schart-canvas-${i}`);
+  if (wrapper) {
+    wrapper.innerHTML = `<canvas id="schart-${i}" aria-label="${escapeHtml(ind.name)} 차트" role="img"></canvas>`;
+  }
+
+  drawStocksChart(ind, i, history);
+}
+
+// ─────────────────────────────────────────────
+//  개별종목 — Period Button Listeners
+// ─────────────────────────────────────────────
+function attachStocksChartPeriodListeners() {
+  document.querySelectorAll('.btn-stocks-period').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const symbol   = btn.dataset.symbol;
+      const range    = btn.dataset.range;
+      const interval = btn.dataset.interval;
+      const label    = btn.dataset.label;
+      const idx      = parseInt(btn.dataset.idx, 10);
+
+      const ind = STOCKS.find(s => s.symbol === symbol);
+      if (!ind) return;
+      if (stockChartPeriods[symbol].range === range) return;
+
+      stockChartPeriods[symbol] = { range, interval, label };
+      fetchSingleStocksChart(ind, idx);
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+//  개별종목 — Fetch Single Chart (period change)
+// ─────────────────────────────────────────────
+async function fetchSingleStocksChart(ind, idx) {
+  const period = stockChartPeriods[ind.symbol];
+  const url = `/api/market?symbols=${encodeURIComponent(ind.symbol)}&range=${period.range}&interval=${period.interval}`;
+
+  const card = document.getElementById(`chart-${ind.symbol}`);
+  if (card) {
+    card.style.setProperty('background', period.range === '1d' ? '#1e293b' : '#2d1b4e', 'important');
+    card.querySelectorAll('.btn-stocks-period').forEach(btn => {
+      btn.setAttribute('aria-pressed', String(btn.dataset.range === period.range));
+      btn.disabled = true;
+    });
+  }
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    const d    = json.data?.[ind.symbol];
+    updateSingleStocksChartCard(ind, idx, d?.history || [], d?.lastTradeDate || null);
+  } catch (err) {
+    console.error(`fetchSingleStocksChart error [${ind.symbol}]:`, err);
+  } finally {
+    if (card) {
+      card.querySelectorAll('.btn-stocks-period').forEach(btn => btn.disabled = false);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+//  개별종목 — Fetch All
+// ─────────────────────────────────────────────
+async function fetchStocksData() {
+  if (isStocksLoading) return;
+  isStocksLoading = true;
+
+  renderStocksSkeletons();
+  try {
+    const groups = new Map();
+    STOCKS.forEach(ind => {
+      const p   = stockChartPeriods[ind.symbol];
+      const key = `${p.range}|${p.interval}`;
+      if (!groups.has(key)) groups.set(key, { period: p, symbols: [] });
+      groups.get(key).symbols.push(ind.symbol);
+    });
+
+    const allData = {};
+    for (const [, group] of groups) {
+      const { period, symbols } = group;
+      const url = `/api/market?symbols=${encodeURIComponent(symbols.join(','))}&range=${period.range}&interval=${period.interval}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      Object.assign(allData, json.data);
+    }
+
+    renderStocksKPICards(allData);
+    renderStocksCharts(allData);
+  } catch (err) {
+    console.error('fetchStocksData error:', err);
+  } finally {
+    isStocksLoading = false;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Tab Switching
+// ─────────────────────────────────────────────
+let activeTab = 'main';
+let stocksLoaded = false;
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
+    });
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+
+    const target = btn.id === 'tab-main' ? 'main' : 'stocks';
+    document.getElementById('panel-main').style.display   = target === 'main'   ? '' : 'none';
+    document.getElementById('panel-stocks').style.display = target === 'stocks' ? '' : 'none';
+    activeTab = target;
+
+    if (target === 'stocks' && !stocksLoaded) {
+      fetchStocksData();
+      stocksLoaded = true;
+    }
+  });
+});
+
+// Keyboard: left/right arrow navigation for tab bar
+document.querySelector('.tab-bar').addEventListener('keydown', e => {
+  const tabs = [...document.querySelectorAll('.tab-btn')];
+  const idx  = tabs.indexOf(document.activeElement);
+  if (idx === -1) return;
+  if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    const next = tabs[(idx + 1) % tabs.length];
+    next.focus(); next.click();
+  } else if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    const prev = tabs[(idx - 1 + tabs.length) % tabs.length];
+    prev.focus(); prev.click();
+  }
+});
 
 // ─────────────────────────────────────────────
 //  Event Listeners
@@ -1228,8 +1660,10 @@ function escapeHtml(str) {
 // ─────────────────────────────────────────────
 function updateScrollMargin() {
   const header = document.querySelector('.dashboard-header');
+  const tabBar = document.querySelector('.tab-bar');
   if (!header) return;
   document.documentElement.style.setProperty('--header-height', header.offsetHeight + 'px');
+  if (tabBar) document.documentElement.style.setProperty('--tab-bar-height', tabBar.offsetHeight + 'px');
 }
 window.addEventListener('resize', updateScrollMargin);
 updateScrollMargin();
