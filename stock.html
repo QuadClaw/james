@@ -183,6 +183,22 @@
       flex-direction: column;
       gap: 4px;
       min-height: 120px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    .kpi-card:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .kpi-card__source {
+      font-size: 0.7rem;
+      color: #6b7280;
+      margin-top: auto;
+      padding-top: 6px;
     }
 
     .kpi-card__label {
@@ -273,6 +289,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 1.25rem 1.5rem;
+      transition: background-color 0.3s ease;
     }
 
     /* Chart card header: title + per-chart period toggle */
@@ -575,7 +592,7 @@ function renderKPICard(ind, d) {
   const changeAbs = d.change != null ? formatValue(Math.abs(d.change), ind.unit) : '—';
 
   return `
-    <div class="kpi-card" tabindex="0" aria-label="${ind.name} ${formatValue(d.current, ind.unit)} ${ind.unit}">
+    <div class="kpi-card" role="button" tabindex="0" data-symbol="${escapeHtml(ind.symbol)}" aria-label="${ind.name} ${formatValue(d.current, ind.unit)} ${ind.unit}, 클릭하면 차트로 이동">
       <div class="kpi-card__label">
         <span aria-hidden="true">${ind.emoji}</span>
         ${escapeHtml(ind.name)}
@@ -584,19 +601,21 @@ function renderKPICard(ind, d) {
       <div class="kpi-card__value">${formatValue(d.current, ind.unit)}</div>
       <div class="kpi-card__change ${cls}">${arrow}${pct} (${changeAbs})</div>
       <div class="kpi-card__prev">전일 종가 ${formatValue(d.previousClose, ind.unit)}</div>
+      <div class="kpi-card__source">출처: Yahoo Finance</div>
     </div>
   `;
 }
 
 function renderKPIError(ind, msg) {
   return `
-    <div class="kpi-card" tabindex="0" aria-label="${ind.name} 데이터 오류">
+    <div class="kpi-card" role="button" tabindex="0" data-symbol="${escapeHtml(ind.symbol)}" aria-label="${ind.name} 데이터 오류, 클릭하면 차트로 이동">
       <div class="kpi-card__label">
         <span aria-hidden="true">${ind.emoji}</span>
         ${escapeHtml(ind.name)}
       </div>
       <div class="kpi-card__value" style="font-size:1.4rem;color:var(--text-muted)">—</div>
       <div class="kpi-card__error">⚠ ${escapeHtml(msg)}</div>
+      <div class="kpi-card__source">출처: Yahoo Finance</div>
     </div>
   `;
 }
@@ -635,7 +654,7 @@ function buildChartCardHTML(ind, i, history) {
   const stats  = calcChartStats(history, ind.unit);
 
   return `
-    <div class="chart-card" id="chart-card-${i}">
+    <div class="chart-card" id="chart-${escapeHtml(ind.symbol)}">
       <div class="chart-card__header">
         <div class="chart-card__title">
           <span aria-hidden="true">${ind.emoji}</span>
@@ -780,8 +799,11 @@ function drawChart(ind, i, history) {
 /** Update one chart card after a period change */
 function updateSingleChartCard(ind, i, history) {
   const period = chartPeriods[ind.symbol];
-  const card   = document.getElementById(`chart-card-${i}`);
+  const card   = document.getElementById(`chart-${ind.symbol}`);
   if (!card) return;
+
+  // Update background color based on period
+  card.style.backgroundColor = period.range === '1d' ? '#1e293b' : '#1a2234';
 
   // Update title text
   const titleEl = card.querySelector('.chart-card__title');
@@ -854,8 +876,10 @@ async function fetchSingleChart(ind, idx) {
   const url = `/api/market?symbols=${encodeURIComponent(ind.symbol)}&range=${period.range}&interval=${period.interval}`;
 
   // Optimistic: update aria-pressed immediately
-  const card = document.getElementById(`chart-card-${idx}`);
+  const card = document.getElementById(`chart-${ind.symbol}`);
   if (card) {
+    // Update background color optimistically
+    card.style.backgroundColor = period.range === '1d' ? '#1e293b' : '#1a2234';
     card.querySelectorAll('.btn-chart-period').forEach(btn => {
       btn.setAttribute('aria-pressed', String(btn.dataset.range === period.range));
       btn.disabled = true;
@@ -880,8 +904,6 @@ async function fetchSingleChart(ind, idx) {
     }
   }
 }
-
-/** Full fetch: all charts grouped by period (initial load + auto-refresh) */
 async function fetchData() {
   if (isLoading) return;
   isLoading = true;
@@ -960,11 +982,26 @@ document.getElementById('btn-retry').addEventListener('click', () => {
   fetchData();
 });
 
-// Keyboard: Enter/Space on kpi-card
-document.addEventListener('keydown', e => {
-  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('kpi-card')) {
-    e.preventDefault();
-  }
+// KPI card click → scroll to chart
+document.getElementById('kpi-grid').addEventListener('click', e => {
+  const card = e.target.closest('.kpi-card');
+  if (!card) return;
+  const symbol = card.dataset.symbol;
+  if (!symbol) return;
+  const chartEl = document.getElementById(`chart-${symbol}`);
+  if (chartEl) chartEl.scrollIntoView({ behavior: 'smooth' });
+});
+
+// Keyboard: Enter/Space on kpi-card → scroll to chart
+document.getElementById('kpi-grid').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const card = e.target.closest('.kpi-card');
+  if (!card) return;
+  e.preventDefault();
+  const symbol = card.dataset.symbol;
+  if (!symbol) return;
+  const chartEl = document.getElementById(`chart-${symbol}`);
+  if (chartEl) chartEl.scrollIntoView({ behavior: 'smooth' });
 });
 
 // ─────────────────────────────────────────────
