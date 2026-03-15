@@ -301,6 +301,13 @@
     .kpi-card__change.down { color: var(--negative); }
     .kpi-card__change.flat { color: var(--neutral); }
 
+    .kpi-card__date {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 1px;
+      opacity: 0.8;
+    }
+
     .kpi-card__prev {
       font-size: 0.75rem;
       color: var(--text-muted);
@@ -700,7 +707,10 @@ function renderKPICard(ind, d) {
   const arrow = changeArrow(d.changePercent);
   const pct = d.changePercent != null ? `${Math.abs(d.changePercent).toFixed(2)}%` : '—';
   const changeAbs = d.change != null ? formatValue(Math.abs(d.change), ind.unit) : '—';
-  const prevDateStr = d.previousCloseDate ? `(${formatPrevCloseDate(d.previousCloseDate)})` : '';
+  const lastDateLabel = d.lastMarketDate ? formatLastMarketDateLabel(d.lastMarketDate) : null;
+  const lastDateHTML = lastDateLabel
+    ? `<div class="kpi-card__date">${escapeHtml(lastDateLabel)}</div>`
+    : '';
 
   return `
     <div class="kpi-card" id="kpi-${escapeHtml(ind.symbol)}" role="button" tabindex="0" data-symbol="${escapeHtml(ind.symbol)}" aria-label="${ind.name} ${formatValue(d.current, ind.unit)} ${ind.unit}, 클릭하면 차트로 이동">
@@ -710,8 +720,9 @@ function renderKPICard(ind, d) {
         <small style="color:#475569;font-size:0.7rem;">(${ind.unit})</small>
       </div>
       <div class="kpi-card__value">${formatValue(d.current, ind.unit)}</div>
-      <div class="kpi-card__change ${cls}">${arrow}${pct} (${changeAbs})</div>
-      <div class="kpi-card__prev">전일${prevDateStr} 종가: ${formatValue(d.previousClose, ind.unit)}</div>
+      ${lastDateHTML}
+      <div class="kpi-card__change ${cls}">${arrow}${pct} (전일대비)</div>
+      <div class="kpi-card__prev">전일 종가: ${formatValue(d.previousClose, ind.unit)}</div>
       <div class="kpi-card__source">출처: Yahoo Finance</div>
     </div>
   `;
@@ -1185,6 +1196,25 @@ function formatPrevCloseDate(dateStr) {
   const names = ['일','월','화','수','목','금','토'];
   const dow   = names[d.getUTCDay()];
   return `${month}/${day} ${dow}`;
+}
+
+// ─────────────────────────────────────────────
+//  Date label helper for lastMarketDate
+//  Returns "3/13(금) 기준" if not today, "실시간" if today
+// ─────────────────────────────────────────────
+function formatLastMarketDateLabel(dateStr) {
+  if (!dateStr) return null;
+  // Today's date in UTC (YYYY-MM-DD)
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  if (dateStr === todayStr) return '실시간';
+  // Format as "3/13(금) 기준"
+  const d = new Date(dateStr + 'T12:00:00Z');
+  const month = d.getUTCMonth() + 1;
+  const day   = d.getUTCDate();
+  const names = ['일','월','화','수','목','금','토'];
+  const dow   = names[d.getUTCDay()];
+  return `${month}/${day}(${dow}) 기준`;
 }
 
 // ─────────────────────────────────────────────
