@@ -85,11 +85,15 @@ async function fetchSymbol(symbol, range, interval) {
   const current = meta.regularMarketPrice ?? meta.previousClose ?? null;
   const previousClose = meta.chartPreviousClose ?? meta.previousClose ?? null;
 
-  // previousCloseDate: regularMarketTime에서 하루 전 날짜 추산
+  // lastMarketDate: regularMarketTime 자체의 날짜 (가장 최근 거래일)
+  // previousCloseDate: 그 하루 전 날짜 (전일 종가 기준일, 주말/공휴일 미고려 추산)
+  let lastMarketDate = null;
   let previousCloseDate = null;
   if (meta.regularMarketTime) {
-    const d = new Date((meta.regularMarketTime - 86400) * 1000);
-    previousCloseDate = d.toISOString().split('T')[0];
+    const lastD = new Date(meta.regularMarketTime * 1000);
+    lastMarketDate = lastD.toISOString().split('T')[0];
+    const prevD = new Date((meta.regularMarketTime - 86400) * 1000);
+    previousCloseDate = prevD.toISOString().split('T')[0];
   }
 
   const change = current != null && previousClose != null
@@ -106,6 +110,7 @@ async function fetchSymbol(symbol, range, interval) {
     current: current != null ? parseFloat(current.toFixed(4)) : null,
     previousClose: previousClose != null ? parseFloat(previousClose.toFixed(4)) : null,
     previousCloseDate,
+    lastMarketDate,
     change,
     changePercent,
     currency: meta.currency || info.currency,

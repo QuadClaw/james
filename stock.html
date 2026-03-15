@@ -26,6 +26,7 @@
       --accent:    #38bdf8;
       --radius:    12px;
       --gap:       16px;
+      --header-height: 70px;
 
       /* Chart line colors per indicator */
       --c0: #38bdf8;
@@ -43,6 +44,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
       min-height: 100vh;
       line-height: 1.5;
+      overscroll-behavior: none;
     }
 
     /* ===== Skip Link ===== */
@@ -150,6 +152,8 @@
       transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
       min-height: 36px;
       white-space: nowrap;
+      order: 10;
+      margin-left: 8px;
     }
     .btn-home:hover {
       background: rgba(255,255,255,0.14);
@@ -215,7 +219,7 @@
       min-height: 140px;
       cursor: pointer;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
-      scroll-margin-top: 100px;
+      scroll-margin-top: calc(var(--header-height) + 16px);
     }
     .kpi-card:hover {
       transform: translateY(-2px);
@@ -323,7 +327,7 @@
       padding: 1.25rem 1.5rem;
       transition: background 0.3s ease, background-color 0.3s ease;
       cursor: pointer;
-      scroll-margin-top: 100px;
+      scroll-margin-top: calc(var(--header-height) + 16px);
     }
 
     /* Chart card header: title + per-chart period toggle */
@@ -657,6 +661,7 @@ function renderKPICard(ind, d) {
   const arrow = changeArrow(d.changePercent);
   const pct = d.changePercent != null ? `${Math.abs(d.changePercent).toFixed(2)}%` : '—';
   const changeAbs = d.change != null ? formatValue(Math.abs(d.change), ind.unit) : '—';
+  const prevDateStr = d.previousCloseDate ? `(${formatPrevCloseDate(d.previousCloseDate)})` : '';
 
   return `
     <div class="kpi-card" id="kpi-${escapeHtml(ind.symbol)}" role="button" tabindex="0" data-symbol="${escapeHtml(ind.symbol)}" aria-label="${ind.name} ${formatValue(d.current, ind.unit)} ${ind.unit}, 클릭하면 차트로 이동">
@@ -667,7 +672,7 @@ function renderKPICard(ind, d) {
       </div>
       <div class="kpi-card__value">${formatValue(d.current, ind.unit)}</div>
       <div class="kpi-card__change ${cls}">${arrow}${pct} (${changeAbs})</div>
-      <div class="kpi-card__prev">${formatPrevCloseDate(d.previousCloseDate)} 종가 ${formatValue(d.previousClose, ind.unit)}</div>
+      <div class="kpi-card__prev">전일${prevDateStr} 종가: ${formatValue(d.previousClose, ind.unit)}</div>
       <div class="kpi-card__source">출처: Yahoo Finance</div>
     </div>
   `;
@@ -1133,14 +1138,14 @@ function formatLastTradeDateSuffix(lastTradeDate) {
 //  Date label helper for KPI previousCloseDate
 // ─────────────────────────────────────────────
 function formatPrevCloseDate(dateStr) {
-  if (!dateStr) return '전일';
+  if (!dateStr) return null;
   // Parse as UTC noon to avoid local TZ shifts
   const d = new Date(dateStr + 'T12:00:00Z');
   const month = d.getUTCMonth() + 1;
   const day   = d.getUTCDate();
   const names = ['일','월','화','수','목','금','토'];
   const dow   = names[d.getUTCDay()];
-  return `${month}/${day}(${dow})`;
+  return `${month}/${day} ${dow}`;
 }
 
 // ─────────────────────────────────────────────
