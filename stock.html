@@ -291,6 +291,7 @@
       border-radius: var(--radius);
       padding: 1.25rem 1.5rem;
       transition: background 0.3s ease, background-color 0.3s ease;
+      cursor: pointer;
     }
 
     /* Chart card header: title + per-chart period toggle */
@@ -593,7 +594,7 @@ function renderKPICard(ind, d) {
   const changeAbs = d.change != null ? formatValue(Math.abs(d.change), ind.unit) : '—';
 
   return `
-    <div class="kpi-card" role="button" tabindex="0" data-symbol="${escapeHtml(ind.symbol)}" aria-label="${ind.name} ${formatValue(d.current, ind.unit)} ${ind.unit}, 클릭하면 차트로 이동">
+    <div class="kpi-card" id="kpi-${escapeHtml(ind.symbol)}" role="button" tabindex="0" data-symbol="${escapeHtml(ind.symbol)}" aria-label="${ind.name} ${formatValue(d.current, ind.unit)} ${ind.unit}, 클릭하면 차트로 이동">
       <div class="kpi-card__label">
         <span aria-hidden="true">${ind.emoji}</span>
         ${escapeHtml(ind.name)}
@@ -609,7 +610,7 @@ function renderKPICard(ind, d) {
 
 function renderKPIError(ind, msg) {
   return `
-    <div class="kpi-card" role="button" tabindex="0" data-symbol="${escapeHtml(ind.symbol)}" aria-label="${ind.name} 데이터 오류, 클릭하면 차트로 이동">
+    <div class="kpi-card" id="kpi-${escapeHtml(ind.symbol)}" role="button" tabindex="0" data-symbol="${escapeHtml(ind.symbol)}" aria-label="${ind.name} 데이터 오류, 클릭하면 차트로 이동">
       <div class="kpi-card__label">
         <span aria-hidden="true">${ind.emoji}</span>
         ${escapeHtml(ind.name)}
@@ -804,7 +805,7 @@ function updateSingleChartCard(ind, i, history) {
   if (!card) return;
 
   // Update background color based on period
-  card.style.setProperty('background', period.range === '1d' ? '#1e293b' : '#0d1f35', 'important');
+  card.style.setProperty('background', period.range === '1d' ? '#1e293b' : '#2d1b4e', 'important');
 
   // Update title text
   const titleEl = card.querySelector('.chart-card__title');
@@ -880,7 +881,7 @@ async function fetchSingleChart(ind, idx) {
   const card = document.getElementById(`chart-${ind.symbol}`);
   if (card) {
     // Update background color optimistically
-    card.style.setProperty('background', period.range === '1d' ? '#1e293b' : '#0d1f35', 'important');
+    card.style.setProperty('background', period.range === '1d' ? '#1e293b' : '#2d1b4e', 'important');
     card.querySelectorAll('.btn-chart-period').forEach(btn => {
       btn.setAttribute('aria-pressed', String(btn.dataset.range === period.range));
       btn.disabled = true;
@@ -991,6 +992,18 @@ document.getElementById('kpi-grid').addEventListener('click', e => {
   if (!symbol) return;
   const chartEl = document.getElementById(`chart-${symbol}`);
   if (chartEl) chartEl.scrollIntoView({ behavior: 'smooth' });
+});
+
+// Chart card click → scroll to KPI card (period toggle buttons excluded)
+document.getElementById('charts-grid').addEventListener('click', e => {
+  // 기간 토글 버튼 클릭은 스크롤 동작 안 함
+  if (e.target.closest('.btn-chart-period')) return;
+  const chartCard = e.target.closest('.chart-card');
+  if (!chartCard) return;
+  const symbol = chartCard.id.replace('chart-', '');
+  if (!symbol) return;
+  const kpiEl = document.getElementById(`kpi-${symbol}`);
+  if (kpiEl) kpiEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 });
 
 // Keyboard: Enter/Space on kpi-card → scroll to chart
