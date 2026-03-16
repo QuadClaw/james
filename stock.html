@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0f172a">
   <title>주식투자 - JamesClaw</title>
   <link rel="icon" type="image/png" href="https://openclaw.ai/apple-touch-icon.png">
@@ -577,12 +577,13 @@
     }
     #stock-search-input {
       flex: 1;
+      min-width: 0;
       padding: 0.75rem 1rem;
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 8px;
       color: var(--text);
-      font-size: 0.9rem;
+      font-size: 16px;
       outline: none;
     }
     #stock-search-input:focus {
@@ -597,8 +598,11 @@
       color: white;
       border: none;
       border-radius: 8px;
+      font-size: 16px;
       font-weight: 600;
       cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
       transition: background 150ms ease;
     }
     .btn-search:hover { background: #1d4ed8; }
