@@ -875,7 +875,6 @@
       el.addEventListener('change', () => {
         autoOneHousehold = true;
         syncOneHousehold();
-        autoCalculate();
       });
     });
 
@@ -887,12 +886,10 @@
       onehouseBadge.style.color = 'var(--accent)';
       onehouseBadge.style.borderColor = 'rgba(167,139,250,0.4)';
       oneHouseholdLabel.textContent = oneHouseholdEl.checked ? '해당' : '해당 없음';
-      autoCalculate();
     });
 
     adjustedAreaEl.addEventListener('change', () => {
       adjustedAreaLabel.textContent = adjustedAreaEl.checked ? '조정대상지역' : '해당 없음';
-      autoCalculate();
     });
 
     // ─── Price hint ─────────────────────────────────────────────────────────
@@ -905,12 +902,6 @@
       } else {
         priceHint.textContent = '';
       }
-      autoCalculate();
-    });
-
-    // ─── Other inputs → auto calc ───────────────────────────────────────────
-    [holdingPeriodEl, ownerAgeEl].forEach(el => {
-      el.addEventListener('change', autoCalculate);
     });
 
     // ─── Tax calculation ────────────────────────────────────────────────────
@@ -1144,10 +1135,7 @@
     }
 
     function autoCalculate() {
-      // Only auto-calc if price is already filled
-      if (publicPriceEl.value && parseFloat(publicPriceEl.value) > 0) {
-        calculate();
-      }
+      // Disabled — only calculate on button click
     }
 
     // ─── Reset ──────────────────────────────────────────────────────────────
