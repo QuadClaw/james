@@ -178,23 +178,17 @@
       position: relative;
     }
 
-    .input-wrap input[type="number"] {
+    .input-wrap input[type="text"] {
       width: 100%;
-      padding: 0.7rem 6.5rem 0.7rem 1rem;
+      padding: 0.7rem 4rem 0.7rem 1rem;
       font-size: 1rem;
       border: 1.5px solid var(--border);
       border-radius: var(--radius-input);
       background: var(--bg-section);
       color: var(--text-primary);
       transition: border-color 150ms ease, box-shadow 150ms ease;
-      appearance: textfield;
-      -moz-appearance: textfield;
     }
-    .input-wrap input[type="number"]::-webkit-inner-spin-button,
-    .input-wrap input[type="number"]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-    }
-    .input-wrap input[type="number"]:focus {
+    .input-wrap input[type="text"]:focus {
       outline: none;
       border-color: var(--border-focus);
       box-shadow: 0 0 0 3px var(--accent-glow);
@@ -624,17 +618,17 @@
           <label for="publicPrice">공시가격 <span class="required" aria-hidden="true">*</span></label>
           <div class="input-wrap">
             <input
-              type="number"
+              type="text"
               id="publicPrice"
               name="publicPrice"
               inputmode="numeric"
-              placeholder="예: 50000"
+              placeholder="500,000,000"
               min="1"
               aria-required="true"
               aria-describedby="publicPrice-hint publicPrice-error"
               autocomplete="off"
             >
-            <span class="input-unit">만원</span>
+            <span class="input-unit">원</span>
           </div>
           <div class="input-hint" id="publicPrice-hint" aria-live="polite"></div>
           <div class="field-error" id="publicPrice-error" role="alert">공시가격을 올바르게 입력해주세요.</div>
@@ -835,21 +829,20 @@
     function fmt(n) {
       return Math.round(n).toLocaleString('ko-KR') + '원';
     }
-    function fmtMan(n) {
-      return Math.round(n / 10000).toLocaleString('ko-KR') + '만원';
-    }
 
-    function toEok(man) {
-      // man: 만원 단위 정수
-      const eok = Math.floor(man / 10000);
-      const rem = man % 10000;
-      const cheon = Math.floor(rem / 1000);
+    function wonToKorean(won) {
+      const eok = Math.floor(won / 100000000);
+      const man = Math.floor((won % 100000000) / 10000);
       let s = '';
       if (eok > 0) s += eok + '억 ';
-      if (cheon > 0) s += cheon + '천만원';
-      else if (eok > 0) s += '원';
-      else s = man + '만원';
-      return s.trim();
+      if (man > 0) s += man.toLocaleString() + '만';
+      if (s === '') s = won.toLocaleString() + '원';
+      return s.trim() + '원';
+    }
+
+    function fmtWon(n) {
+      const rounded = Math.round(n);
+      return wonToKorean(rounded) + ' (' + rounded.toLocaleString('ko-KR') + '원)';
     }
 
     // ─── Auto 1세대 1주택 ───────────────────────────────────────────────────
@@ -894,9 +887,14 @@
 
     // ─── Price hint ─────────────────────────────────────────────────────────
     publicPriceEl.addEventListener('input', () => {
-      const v = parseFloat(publicPriceEl.value);
-      if (v > 0) {
-        priceHint.textContent = '약 ' + toEok(Math.round(v));
+      // 숫자 외 문자 제거 후 콤마 포맷
+      let raw = publicPriceEl.value.replace(/[^0-9]/g, '');
+      let formatted = raw === '' ? '' : Number(raw).toLocaleString('ko-KR');
+      publicPriceEl.value = formatted;
+
+      const won = parseInt(raw) || 0;
+      if (won > 0) {
+        priceHint.textContent = '약 ' + wonToKorean(won);
         publicPriceEl.classList.remove('invalid');
         priceError.classList.remove('visible');
       } else {
@@ -907,19 +905,17 @@
     // ─── Tax calculation ────────────────────────────────────────────────────
 
     /**
-     * 재산세 계산 (만원 단위 입력, 원 단위 반환)
-     * @param {number} publicPriceMan - 공시가격 (만원)
+     * 재산세 계산 (원 단위 입력, 원 단위 반환)
+     * @param {number} publicPriceWon - 공시가격 (원)
      * @param {boolean} isOneHouseSpecial - 1세대 1주택 특례 적용 여부
      * @returns {{ base, tax, edu, urban, total }}
      */
-    function calcPropertyTax(publicPriceMan, isOneHouseSpecial) {
-      const publicPriceWon = publicPriceMan * 10000;
+    function calcPropertyTax(publicPriceWon, isOneHouseSpecial) {
       const base = publicPriceWon * 0.6; // 과세표준 (원)
 
       let tax = 0;
 
-      if (isOneHouseSpecial && publicPriceWon <= 9_0000_0000) {
-        // 1세대 1주택 특례 세율
+      if (isOneHouseSpecial && publicPriceWon <= 9_0000_0000) {        // 1세대 1주택 특례 세율
         if (base <= 6000_0000) {
           tax = base * 0.0005;
         } else if (base <= 1_5000_0000) {
@@ -951,7 +947,7 @@
 
     /**
      * 종합부동산세 계산
-     * @param {number} publicPriceMan
+     * @param {number} publicPriceWon - 공시가격 (원)
      * @param {number} houseCount
      * @param {boolean} isAdjusted - 조정대상지역 여부
      * @param {boolean} isOneHousehold - 1세대 1주택 여부
@@ -959,9 +955,7 @@
      * @param {number} ownerAgeMin  - 소유자 나이 최솟값 (0/60/65/70)
      * @returns {{ eligible, deductionBase, base, baseTax, creditRate, credit, rural, total }}
      */
-    function calcJongbuse(publicPriceMan, houseCount, isAdjusted, isOneHousehold, holdingYears, ownerAgeMin) {
-      const publicPriceWon = publicPriceMan * 10000;
-
+    function calcJongbuse(publicPriceWon, houseCount, isAdjusted, isOneHousehold, holdingYears, ownerAgeMin) {
       // 기본공제
       const deductionBase = isOneHousehold ? 12_0000_0000 : 9_0000_0000;
 
@@ -1051,7 +1045,7 @@
     function renderResults(pt, jb) {
       // 재산세
       $('r-pt-base-label').textContent = '과세표준 (공시가격 × 60%)';
-      $('r-pt-base').textContent  = fmtMan(pt.base / 10000);
+      $('r-pt-base').textContent  = fmtWon(pt.base);
       $('r-pt-tax').textContent   = fmt(pt.tax);
       $('r-pt-edu').textContent   = fmt(pt.edu);
       $('r-pt-urban').textContent = fmt(pt.urban);
@@ -1065,9 +1059,9 @@
         $('r-jb-none').style.display   = 'none';
         $('r-jb-detail').style.display = '';
 
-        $('r-jb-deduction-base').textContent = fmtMan(jb.deductionBase / 10000);
+        $('r-jb-deduction-base').textContent = fmtWon(jb.deductionBase);
         $('r-jb-base-label').textContent     = '과세표준 ((공시가격 - 공제) × 60%)';
-        $('r-jb-base').textContent           = fmtMan(jb.base / 10000);
+        $('r-jb-base').textContent           = fmtWon(jb.base);
         $('r-jb-tax').textContent            = fmt(jb.baseTax);
 
         const creditRow = $('r-jb-credit-row');
@@ -1105,7 +1099,7 @@
 
     // ─── Main Calculate ─────────────────────────────────────────────────────
     function calculate() {
-      const rawPrice = parseFloat(publicPriceEl.value);
+      const rawPrice = parseInt(publicPriceEl.value.replace(/[^0-9]/g, '')) || 0;
 
       // Validation
       if (!rawPrice || rawPrice <= 0) {
@@ -1126,7 +1120,7 @@
       const isOneHousehold = oneHouseholdEl.checked;
 
       // 1세대 1주택 특례 적용 조건: 1세대1주택 체크 AND 공시가격 9억 이하
-      const isOneHouseSpecial = isOneHousehold && (rawPrice <= 90000); // 9억 = 90000만원
+      const isOneHouseSpecial = isOneHousehold && (rawPrice <= 900000000); // 9억 = 900,000,000원
 
       const pt = calcPropertyTax(rawPrice, isOneHouseSpecial);
       const jb = calcJongbuse(rawPrice, houseCount, isAdjusted, isOneHousehold, holdingYears, ownerAgeMin);
