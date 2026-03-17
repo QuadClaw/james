@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="ko" style="color-scheme: light;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#a78bfa">
+  <title>🏠 세금 계산기 — JamesClaw</title>
+  <link rel="icon" type="image/png" href="https://openclaw.ai/apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="https://openclaw.ai/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="세금 계산기">
+  <meta name="description" content="아파트 재산세 및 종합부동산세 간편 계산기 (2024년 기준)">
+  <style>
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-page:        #f0f4ff;
+      --bg-card:        #ffffff;
+      --bg-section:     #fafbff;
+      --border:         #dde3f5;
+      --border-focus:   #7c3aed;
+      --accent:         #7c3aed;
+      --accent-soft:    #a78bfa;
+      --accent-glow:    rgba(167, 139, 250, 0.20);
+      --text-primary:   #1e1b4b;
+      --text-muted:     #6b7280;
+      --text-label:     #374151;
+      --success:        #059669;
+      --danger:         #dc2626;
+      --warning:        #d97706;
+      --info:           #2563eb;
+      --radius-card:    20px;
+      --radius-input:   10px;
+      --shadow-card:    0 2px 16px rgba(124, 58, 237, 0.09);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: linear-gradient(135deg, #e0e7ff 0%, #f0fdf4 50%, #fdf4ff 100%);
+      background-attachment: fixed;
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      min-height: 100vh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      font-size: 16px;
+    }
+
+    /* ===== Skip Link ===== */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      z-index: 999;
+      background: var(--accent);
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 0 0 8px 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: top 150ms ease;
+    }
+    .skip-link:focus { top: 0; }
+
+    /* ===== Layout ===== */
+    .page-wrapper {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 1rem 4rem;
+    }
+
+    /* ===== Top Nav ===== */
+    .top-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 0 0.5rem;
+    }
+
+    .home-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 0.4rem 0.85rem;
+      border: 1.5px solid var(--accent-soft);
+      border-radius: 999px;
+      background: rgba(167, 139, 250, 0.1);
+      transition: background 180ms ease, box-shadow 180ms ease;
+    }
+    .home-btn:hover, .home-btn:focus-visible {
+      background: rgba(167, 139, 250, 0.2);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+      outline: none;
+    }
+    .home-btn:focus-visible { outline: 3px solid var(--border-focus); outline-offset: 2px; }
+
+    /* ===== Page Header ===== */
+    .page-header {
+      text-align: center;
+      padding: 1.5rem 0 2rem;
+    }
+
+    .page-header .icon {
+      font-size: 3rem;
+      line-height: 1;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-title {
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #7c3aed 0%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .page-subtitle {
+      margin-top: 0.4rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* ===== Card ===== */
+    .card {
+      background: var(--bg-card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 1.75rem 1.5rem;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 1.25rem;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* ===== Form Fields ===== */
+    .field {
+      margin-bottom: 1.25rem;
+    }
+    .field:last-child { margin-bottom: 0; }
+
+    .field label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-label);
+      margin-bottom: 0.4rem;
+    }
+
+    .field label .required {
+      color: var(--danger);
+      margin-left: 2px;
+    }
+
+    /* Number Input */
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-wrap input[type="number"] {
+      width: 100%;
+      padding: 0.7rem 6.5rem 0.7rem 1rem;
+      font-size: 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-input);
+      background: var(--bg-section);
+      color: var(--text-primary);
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+      appearance: textfield;
+      -moz-appearance: textfield;
+    }
+    .input-wrap input[type="number"]::-webkit-inner-spin-button,
+    .input-wrap input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+    }
+    .input-wrap input[type="number"]:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .input-unit {
+      position: absolute;
+      right: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .input-hint {
+      margin-top: 0.35rem;
+      font-size: 0.8rem;
+      color: var(--accent);
+      font-weight: 500;
+      min-height: 1.2em;
+    }
+
+    /* Select */
+    select {
+      width: 100%;
+      padding: 0.7rem 2.5rem 0.7rem 1rem;
+      font-size: 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-input);
+      background: var(--bg-section);
+      color: var(--text-primary);
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      cursor: pointer;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+    select:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    /* Radio Group */
+    .radio-group {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .radio-btn {
+      position: relative;
+    }
+
+    .radio-btn input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .radio-btn label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.55rem 1.1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: 1.5px solid var(--border);
+      border-radius: 999px;
+      background: var(--bg-section);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 180ms ease;
+      white-space: nowrap;
+      margin-bottom: 0;
+    }
+
+    .radio-btn input[type="radio"]:checked + label {
+      border-color: var(--accent);
+      background: rgba(124, 58, 237, 0.1);
+      color: var(--accent);
+    }
+
+    .radio-btn input[type="radio"]:focus-visible + label {
+      outline: 3px solid var(--border-focus);
+      outline-offset: 2px;
+    }
+
+    .radio-btn label:hover {
+      border-color: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    /* Toggle Checkbox */
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .toggle {
+      position: relative;
+      width: 48px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+
+    .toggle input[type="checkbox"] {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: #d1d5db;
+      cursor: pointer;
+      transition: background 200ms ease;
+    }
+
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      top: 3px;
+      left: 3px;
+      transition: transform 200ms ease;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    .toggle input:checked ~ .toggle-track {
+      background: var(--accent);
+    }
+
+    .toggle input:checked ~ .toggle-track::after {
+      transform: translateX(22px);
+    }
+
+    .toggle input:focus-visible ~ .toggle-track {
+      outline: 3px solid var(--border-focus);
+      outline-offset: 2px;
+    }
+
+    .toggle-label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-label);
+      cursor: pointer;
+    }
+
+    /* Auto Badge */
+    .auto-badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(52, 211, 153, 0.15);
+      color: #059669;
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      margin-left: 0.4rem;
+      vertical-align: middle;
+    }
+
+    /* ===== Action Buttons ===== */
+    .btn-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 0.85rem 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: var(--radius-input);
+      cursor: pointer;
+      transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+      touch-action: manipulation;
+    }
+
+    .btn:focus-visible {
+      outline: 3px solid var(--border-focus);
+      outline-offset: 2px;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
+    }
+
+    .btn-secondary {
+      background: var(--bg-section);
+      color: var(--text-muted);
+      border: 1.5px solid var(--border);
+    }
+    .btn-secondary:hover {
+      border-color: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    /* ===== Error ===== */
+    .field-error {
+      margin-top: 0.35rem;
+      font-size: 0.8rem;
+      color: var(--danger);
+      font-weight: 500;
+      display: none;
+    }
+    .field-error.visible { display: block; }
+    input.invalid, select.invalid {
+      border-color: var(--danger) !important;
+    }
+
+    /* ===== Results ===== */
+    #result-area {
+      display: none;
+    }
+    #result-area.visible { display: block; }
+
+    .result-card {
+      background: var(--bg-card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 1.25rem;
+    }
+
+    .result-header {
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      color: #fff;
+      padding: 1rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .result-section {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-section:last-child { border-bottom: none; }
+
+    .result-section-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.85rem;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.5rem;
+      gap: 0.5rem;
+    }
+    .result-row:last-child { margin-bottom: 0; }
+
+    .result-row-label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      flex: 1;
+    }
+
+    .result-row-value {
+      font-size: 0.925rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .result-row-value.deduction { color: var(--success); }
+    .result-row-value.highlight { color: var(--info); }
+
+    .result-subtotal {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.75rem;
+      margin-top: 0.75rem;
+      border-top: 1px dashed var(--border);
+      font-weight: 700;
+    }
+
+    .result-subtotal .label {
+      font-size: 0.9rem;
+      color: var(--text-label);
+    }
+
+    .result-subtotal .value {
+      font-size: 1rem;
+      color: var(--accent);
+    }
+
+    .result-none {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 0.5rem 0;
+    }
+
+    /* Total Section */
+    .result-total-section {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.06) 0%, rgba(56, 189, 248, 0.06) 100%);
+      padding: 1.5rem;
+      text-align: center;
+      border-top: 2px solid var(--border);
+    }
+
+    .result-total-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .result-total-amount {
+      font-size: clamp(1.6rem, 5vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--danger);
+      line-height: 1;
+    }
+
+    .result-total-amount.low { color: var(--info); }
+
+    .result-monthly {
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .result-monthly strong {
+      color: var(--text-label);
+      font-weight: 700;
+    }
+
+    /* ===== Disclaimer ===== */
+    .disclaimer {
+      background: rgba(217, 119, 6, 0.07);
+      border: 1px solid rgba(217, 119, 6, 0.25);
+      border-radius: 12px;
+      padding: 0.85rem 1.1rem;
+      font-size: 0.8rem;
+      color: #92400e;
+      line-height: 1.5;
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+      margin-bottom: 1.25rem;
+    }
+
+    .disclaimer .icon { flex-shrink: 0; font-size: 1rem; }
+
+    /* ===== Footer ===== */
+    .site-footer {
+      text-align: center;
+      padding-top: 2rem;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+      margin-top: 1rem;
+    }
+
+    /* ===== Responsive tweaks ===== */
+    @media (max-width: 400px) {
+      .card { padding: 1.25rem 1rem; }
+      .result-section { padding: 1rem 1.1rem; }
+      .result-total-section { padding: 1.25rem 1rem; }
+      .btn { font-size: 0.95rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <a href="#main-content" class="skip-link">본문으로 건너뛰기</a>
+
+  <div class="page-wrapper">
+
+    <nav class="top-nav" aria-label="상단 내비게이션">
+      <a href="index.html" class="home-btn" aria-label="JamesClaw 홈으로">
+        ← 🏠 JamesClaw
+      </a>
+    </nav>
+
+    <header class="page-header">
+      <span class="icon" aria-hidden="true">🏠</span>
+      <h1 class="page-title">아파트 세금 계산기</h1>
+      <p class="page-subtitle">재산세 + 종합부동산세 · 2024년 기준</p>
+    </header>
+
+    <main id="main-content">
+
+      <!-- Input Card -->
+      <div class="card" role="region" aria-label="세금 계산 입력">
+        <h2 class="card-title">📋 기본 정보 입력</h2>
+
+        <!-- 공시가격 -->
+        <div class="field">
+          <label for="publicPrice">공시가격 <span class="required" aria-hidden="true">*</span></label>
+          <div class="input-wrap">
+            <input
+              type="number"
+              id="publicPrice"
+              name="publicPrice"
+              inputmode="numeric"
+              placeholder="예: 50000"
+              min="1"
+              aria-required="true"
+              aria-describedby="publicPrice-hint publicPrice-error"
+              autocomplete="off"
+            >
+            <span class="input-unit">만원</span>
+          </div>
+          <div class="input-hint" id="publicPrice-hint" aria-live="polite"></div>
+          <div class="field-error" id="publicPrice-error" role="alert">공시가격을 올바르게 입력해주세요.</div>
+        </div>
+
+        <!-- 주택 수 -->
+        <div class="field">
+          <fieldset>
+            <legend style="font-size:0.875rem;font-weight:600;color:var(--text-label);margin-bottom:0.4rem;">주택 수</legend>
+            <div class="radio-group" role="radiogroup">
+              <div class="radio-btn">
+                <input type="radio" id="houses1" name="houseCount" value="1" checked>
+                <label for="houses1">1주택</label>
+              </div>
+              <div class="radio-btn">
+                <input type="radio" id="houses2" name="houseCount" value="2">
+                <label for="houses2">2주택</label>
+              </div>
+              <div class="radio-btn">
+                <input type="radio" id="houses3" name="houseCount" value="3">
+                <label for="houses3">3주택 이상</label>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- 보유기간 -->
+        <div class="field">
+          <label for="holdingPeriod">보유기간</label>
+          <select id="holdingPeriod" name="holdingPeriod">
+            <option value="0">5년 미만</option>
+            <option value="5">5~10년</option>
+            <option value="10">10~15년</option>
+            <option value="15">15년 이상</option>
+          </select>
+        </div>
+
+        <!-- 소유자 나이 -->
+        <div class="field">
+          <label for="ownerAge">소유자 나이</label>
+          <select id="ownerAge" name="ownerAge">
+            <option value="0">60세 미만</option>
+            <option value="60">60~65세</option>
+            <option value="65">65~70세</option>
+            <option value="70">70세 이상</option>
+          </select>
+        </div>
+
+        <!-- 조정대상지역 -->
+        <div class="field">
+          <label>조정대상지역 여부</label>
+          <div class="toggle-wrap">
+            <label class="toggle" for="adjustedArea">
+              <input type="checkbox" id="adjustedArea" name="adjustedArea">
+              <span class="toggle-track" aria-hidden="true"></span>
+            </label>
+            <span class="toggle-label" id="adjustedAreaLabel">해당 없음</span>
+          </div>
+        </div>
+
+        <!-- 1세대 1주택 -->
+        <div class="field">
+          <label>
+            1세대 1주택 여부
+            <span class="auto-badge" id="onehouseBadge">자동</span>
+          </label>
+          <div class="toggle-wrap">
+            <label class="toggle" for="oneHousehold">
+              <input type="checkbox" id="oneHousehold" name="oneHousehold" checked>
+              <span class="toggle-track" aria-hidden="true"></span>
+            </label>
+            <span class="toggle-label" id="oneHouseholdLabel">해당</span>
+          </div>
+        </div>
+
+      </div><!-- /card -->
+
+      <!-- Buttons -->
+      <div class="btn-row">
+        <button class="btn btn-primary" id="calcBtn" type="button" aria-controls="result-area">
+          💰 세금 계산하기
+        </button>
+        <button class="btn btn-secondary" id="resetBtn" type="button">
+          ↩ 초기화
+        </button>
+      </div>
+
+      <!-- Result Area -->
+      <section
+        id="result-area"
+        aria-live="polite"
+        aria-label="세금 계산 결과"
+        tabindex="-1"
+      >
+        <div class="result-card">
+          <div class="result-header">📋 세금 계산 결과</div>
+
+          <!-- 재산세 -->
+          <div class="result-section" id="result-property-tax">
+            <div class="result-section-title">재산세</div>
+            <div class="result-row">
+              <span class="result-row-label" id="r-pt-base-label">과세표준</span>
+              <span class="result-row-value highlight" id="r-pt-base">—</span>
+            </div>
+            <div class="result-row">
+              <span class="result-row-label">재산세</span>
+              <span class="result-row-value" id="r-pt-tax">—</span>
+            </div>
+            <div class="result-row">
+              <span class="result-row-label">지방교육세 (재산세 × 20%)</span>
+              <span class="result-row-value" id="r-pt-edu">—</span>
+            </div>
+            <div class="result-row">
+              <span class="result-row-label">도시지역분 (과표 × 0.14%)</span>
+              <span class="result-row-value" id="r-pt-urban">—</span>
+            </div>
+            <div class="result-subtotal">
+              <span class="label">재산세 소계</span>
+              <span class="value" id="r-pt-total">—</span>
+            </div>
+          </div>
+
+          <!-- 종부세 -->
+          <div class="result-section" id="result-jongbuse">
+            <div class="result-section-title">종합부동산세</div>
+            <div id="r-jb-none" class="result-none" style="display:none;">종부세 대상 아님 (공시가격 ≤ 기본공제)</div>
+            <div id="r-jb-detail">
+              <div class="result-row">
+                <span class="result-row-label">기본공제</span>
+                <span class="result-row-value" id="r-jb-deduction-base">—</span>
+              </div>
+              <div class="result-row">
+                <span class="result-row-label" id="r-jb-base-label">과세표준</span>
+                <span class="result-row-value highlight" id="r-jb-base">—</span>
+              </div>
+              <div class="result-row">
+                <span class="result-row-label">종부세 (기본)</span>
+                <span class="result-row-value" id="r-jb-tax">—</span>
+              </div>
+              <div class="result-row" id="r-jb-credit-row">
+                <span class="result-row-label" id="r-jb-credit-label">세액공제</span>
+                <span class="result-row-value deduction" id="r-jb-credit">—</span>
+              </div>
+              <div class="result-row">
+                <span class="result-row-label">농어촌특별세 (종부세 × 20%)</span>
+                <span class="result-row-value" id="r-jb-rural">—</span>
+              </div>
+              <div class="result-subtotal">
+                <span class="label">종부세 소계</span>
+                <span class="value" id="r-jb-total">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 총액 -->
+          <div class="result-total-section">
+            <div class="result-total-label">💰 총 보유세 (연간)</div>
+            <div class="result-total-amount" id="r-grand-total" aria-live="polite">—</div>
+            <div class="result-monthly" id="r-monthly">월 환산: <strong id="r-monthly-amount">—</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Disclaimer -->
+      <div class="disclaimer" role="note">
+        <span class="icon">⚠️</span>
+        <span>본 계산기는 <strong>참고용</strong>이며, 실제 세액은 재산 소재지 및 개인 상황에 따라 달라질 수 있습니다. 정확한 세액은 <strong>관할 세무서</strong>에 문의하세요.</span>
+      </div>
+
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <p>© 2026 JamesClaw · 2024년 기준</p>
+    </footer>
+
+  </div><!-- /page-wrapper -->
+
+  <script>
+    'use strict';
+
+    // ─── DOM refs ───────────────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const publicPriceEl     = $('publicPrice');
+    const houseCountEls     = document.querySelectorAll('[name="houseCount"]');
+    const holdingPeriodEl   = $('holdingPeriod');
+    const ownerAgeEl        = $('ownerAge');
+    const adjustedAreaEl    = $('adjustedArea');
+    const oneHouseholdEl    = $('oneHousehold');
+    const oneHouseholdLabel = $('oneHouseholdLabel');
+    const onehouseBadge     = $('onehouseBadge');
+    const adjustedAreaLabel = $('adjustedAreaLabel');
+    const resultArea        = $('result-area');
+    const priceHint         = $('publicPrice-hint');
+    const priceError        = $('publicPrice-error');
+    let   autoOneHousehold  = true; // tracks whether the toggle is auto-managed
+
+    // ─── Utilities ──────────────────────────────────────────────────────────
+    function fmt(n) {
+      return Math.round(n).toLocaleString('ko-KR') + '원';
+    }
+    function fmtMan(n) {
+      return Math.round(n / 10000).toLocaleString('ko-KR') + '만원';
+    }
+
+    function toEok(man) {
+      // man: 만원 단위 정수
+      const eok = Math.floor(man / 10000);
+      const rem = man % 10000;
+      const cheon = Math.floor(rem / 1000);
+      let s = '';
+      if (eok > 0) s += eok + '억 ';
+      if (cheon > 0) s += cheon + '천만원';
+      else if (eok > 0) s += '원';
+      else s = man + '만원';
+      return s.trim();
+    }
+
+    // ─── Auto 1세대 1주택 ───────────────────────────────────────────────────
+    function getHouseCount() {
+      for (const el of houseCountEls) {
+        if (el.checked) return parseInt(el.value, 10);
+      }
+      return 1;
+    }
+
+    function syncOneHousehold() {
+      const hc = getHouseCount();
+      if (autoOneHousehold) {
+        const isOne = hc === 1;
+        oneHouseholdEl.checked = isOne;
+        oneHouseholdLabel.textContent = isOne ? '해당' : '해당 없음';
+        onehouseBadge.textContent = '자동';
+        onehouseBadge.style.display = '';
+      }
+    }
+
+    houseCountEls.forEach(el => {
+      el.addEventListener('change', () => {
+        autoOneHousehold = true;
+        syncOneHousehold();
+        autoCalculate();
+      });
+    });
+
+    oneHouseholdEl.addEventListener('change', () => {
+      // manual override
+      autoOneHousehold = false;
+      onehouseBadge.textContent = '수동';
+      onehouseBadge.style.background = 'rgba(167,139,250,0.15)';
+      onehouseBadge.style.color = 'var(--accent)';
+      onehouseBadge.style.borderColor = 'rgba(167,139,250,0.4)';
+      oneHouseholdLabel.textContent = oneHouseholdEl.checked ? '해당' : '해당 없음';
+      autoCalculate();
+    });
+
+    adjustedAreaEl.addEventListener('change', () => {
+      adjustedAreaLabel.textContent = adjustedAreaEl.checked ? '조정대상지역' : '해당 없음';
+      autoCalculate();
+    });
+
+    // ─── Price hint ─────────────────────────────────────────────────────────
+    publicPriceEl.addEventListener('input', () => {
+      const v = parseFloat(publicPriceEl.value);
+      if (v > 0) {
+        priceHint.textContent = '약 ' + toEok(Math.round(v));
+        publicPriceEl.classList.remove('invalid');
+        priceError.classList.remove('visible');
+      } else {
+        priceHint.textContent = '';
+      }
+      autoCalculate();
+    });
+
+    // ─── Other inputs → auto calc ───────────────────────────────────────────
+    [holdingPeriodEl, ownerAgeEl].forEach(el => {
+      el.addEventListener('change', autoCalculate);
+    });
+
+    // ─── Tax calculation ────────────────────────────────────────────────────
+
+    /**
+     * 재산세 계산 (만원 단위 입력, 원 단위 반환)
+     * @param {number} publicPriceMan - 공시가격 (만원)
+     * @param {boolean} isOneHouseSpecial - 1세대 1주택 특례 적용 여부
+     * @returns {{ base, tax, edu, urban, total }}
+     */
+    function calcPropertyTax(publicPriceMan, isOneHouseSpecial) {
+      const publicPriceWon = publicPriceMan * 10000;
+      const base = publicPriceWon * 0.6; // 과세표준 (원)
+
+      let tax = 0;
+
+      if (isOneHouseSpecial && publicPriceWon <= 9_0000_0000) {
+        // 1세대 1주택 특례 세율
+        if (base <= 6000_0000) {
+          tax = base * 0.0005;
+        } else if (base <= 1_5000_0000) {
+          tax = 30000 + (base - 6000_0000) * 0.001;
+        } else if (base <= 3_0000_0000) {
+          tax = 120000 + (base - 1_5000_0000) * 0.002;
+        } else {
+          tax = 420000 + (base - 3_0000_0000) * 0.0035;
+        }
+      } else {
+        // 일반 세율
+        if (base <= 6000_0000) {
+          tax = base * 0.001;
+        } else if (base <= 1_5000_0000) {
+          tax = 60000 + (base - 6000_0000) * 0.0015;
+        } else if (base <= 3_0000_0000) {
+          tax = 195000 + (base - 1_5000_0000) * 0.0025;
+        } else {
+          tax = 570000 + (base - 3_0000_0000) * 0.004;
+        }
+      }
+
+      const edu   = tax * 0.2;             // 지방교육세
+      const urban = base * 0.0014;         // 도시지역분
+      const total = tax + edu + urban;
+
+      return { base, tax, edu, urban, total };
+    }
+
+    /**
+     * 종합부동산세 계산
+     * @param {number} publicPriceMan
+     * @param {number} houseCount
+     * @param {boolean} isAdjusted - 조정대상지역 여부
+     * @param {boolean} isOneHousehold - 1세대 1주택 여부
+     * @param {number} holdingYears - 보유기간 최솟값 (0/5/10/15)
+     * @param {number} ownerAgeMin  - 소유자 나이 최솟값 (0/60/65/70)
+     * @returns {{ eligible, deductionBase, base, baseTax, creditRate, credit, rural, total }}
+     */
+    function calcJongbuse(publicPriceMan, houseCount, isAdjusted, isOneHousehold, holdingYears, ownerAgeMin) {
+      const publicPriceWon = publicPriceMan * 10000;
+
+      // 기본공제
+      const deductionBase = isOneHousehold ? 12_0000_0000 : 9_0000_0000;
+
+      if (publicPriceWon <= deductionBase) {
+        return { eligible: false, deductionBase };
+      }
+
+      // 중과 여부: 3주택 이상 또는 (조정대상지역 + 2주택)
+      const isHeavy = (houseCount >= 3) || (isAdjusted && houseCount === 2);
+
+      // 과세표준
+      const base = (publicPriceWon - deductionBase) * 0.6;
+
+      // 세율 적용 (원 단위)
+      function applyRate(b, heavy) {
+        // 구간별 세율표 (원 단위 기준)
+        // 일반: 94억 초과 2.7%, 중과: 94억 초과 5.0%
+        const brackets = heavy ? [
+          [3_0000_0000,   0,             0.005],
+          [6_0000_0000,   150_0000,      0.007],
+          [12_0000_0000,  360_0000,      0.010],
+          [25_0000_0000,  960_0000,      0.013],
+          [50_0000_0000,  2650_0000,     0.015],
+          [94_0000_0000,  6400_0000,     0.020],
+          [Infinity,      15200_0000,    0.050],
+        ] : [
+          [3_0000_0000,   0,             0.005],
+          [6_0000_0000,   150_0000,      0.007],
+          [12_0000_0000,  360_0000,      0.010],
+          [25_0000_0000,  960_0000,      0.013],
+          [50_0000_0000,  2650_0000,     0.015],
+          [94_0000_0000,  6400_0000,     0.020],
+          [Infinity,      15200_0000,    0.027],
+        ];
+
+        const starts = [0, 3_0000_0000, 6_0000_0000, 12_0000_0000, 25_0000_0000, 50_0000_0000, 94_0000_0000];
+
+        for (let i = 0; i < brackets.length; i++) {
+          const [upperLimit, base_tax, marginalRate] = brackets[i];
+          if (b <= upperLimit) {
+            return base_tax + (b - starts[i]) * marginalRate;
+          }
+        }
+        return 0;
+      }
+
+      const baseTax = applyRate(base, isHeavy);
+
+      // 1세대 1주택 세액공제 (고령자 + 장기보유, 최대 80%)
+      let creditRate = 0;
+      if (isOneHousehold) {
+        // 고령자 공제
+        let ageCreditRate = 0;
+        if (ownerAgeMin >= 70) ageCreditRate = 0.4;
+        else if (ownerAgeMin >= 65) ageCreditRate = 0.3;
+        else if (ownerAgeMin >= 60) ageCreditRate = 0.2;
+
+        // 장기보유 공제
+        let holdingCreditRate = 0;
+        if (holdingYears >= 15) holdingCreditRate = 0.5;
+        else if (holdingYears >= 10) holdingCreditRate = 0.4;
+        else if (holdingYears >= 5) holdingCreditRate = 0.2;
+
+        creditRate = Math.min(ageCreditRate + holdingCreditRate, 0.8);
+      }
+
+      const credit  = baseTax * creditRate;
+      const taxAfterCredit = baseTax - credit;
+      const rural   = taxAfterCredit * 0.2;
+      const total   = taxAfterCredit + rural;
+
+      return {
+        eligible: true,
+        deductionBase,
+        base,
+        baseTax,
+        creditRate,
+        ageCreditRate: isOneHousehold ? Math.min(ownerAgeMin >= 70 ? 0.4 : ownerAgeMin >= 65 ? 0.3 : ownerAgeMin >= 60 ? 0.2 : 0, 0.8) : 0,
+        holdingCreditRate: isOneHousehold ? Math.min(holdingYears >= 15 ? 0.5 : holdingYears >= 10 ? 0.4 : holdingYears >= 5 ? 0.2 : 0, 0.8) : 0,
+        credit,
+        rural,
+        total
+      };
+    }
+
+    // ─── Render Results ─────────────────────────────────────────────────────
+    function renderResults(pt, jb) {
+      // 재산세
+      $('r-pt-base-label').textContent = '과세표준 (공시가격 × 60%)';
+      $('r-pt-base').textContent  = fmtMan(pt.base / 10000);
+      $('r-pt-tax').textContent   = fmt(pt.tax);
+      $('r-pt-edu').textContent   = fmt(pt.edu);
+      $('r-pt-urban').textContent = fmt(pt.urban);
+      $('r-pt-total').textContent = fmt(pt.total);
+
+      // 종부세
+      if (!jb.eligible) {
+        $('r-jb-none').style.display   = '';
+        $('r-jb-detail').style.display = 'none';
+      } else {
+        $('r-jb-none').style.display   = 'none';
+        $('r-jb-detail').style.display = '';
+
+        $('r-jb-deduction-base').textContent = fmtMan(jb.deductionBase / 10000);
+        $('r-jb-base-label').textContent     = '과세표준 ((공시가격 - 공제) × 60%)';
+        $('r-jb-base').textContent           = fmtMan(jb.base / 10000);
+        $('r-jb-tax').textContent            = fmt(jb.baseTax);
+
+        const creditRow = $('r-jb-credit-row');
+        if (jb.creditRate > 0) {
+          creditRow.style.display = '';
+          const ageLabel     = jb.ageCreditRate   > 0 ? `고령자 ${jb.ageCreditRate * 100}%` : '';
+          const holdingLabel = jb.holdingCreditRate > 0 ? `장기보유 ${jb.holdingCreditRate * 100}%` : '';
+          const parts = [ageLabel, holdingLabel].filter(Boolean).join(' + ');
+          $('r-jb-credit-label').textContent = `세액공제 (${parts}, 합산 ${jb.creditRate * 100}%)`;
+          $('r-jb-credit').textContent       = '-' + fmt(jb.credit);
+        } else {
+          creditRow.style.display = 'none';
+        }
+
+        $('r-jb-rural').textContent = fmt(jb.rural);
+        $('r-jb-total').textContent = fmt(jb.total);
+      }
+
+      // 총액
+      const jbTotal   = jb.eligible ? jb.total : 0;
+      const grandTotal = pt.total + jbTotal;
+      const monthly    = grandTotal / 12;
+
+      const grandEl = $('r-grand-total');
+      grandEl.textContent = fmt(grandTotal);
+      // 색상: 500만 이하 파란색, 초과 빨간색
+      grandEl.className = 'result-total-amount' + (grandTotal <= 5_000_000 ? ' low' : '');
+
+      $('r-monthly-amount').textContent = fmt(monthly);
+
+      // Show result area
+      resultArea.classList.add('visible');
+      resultArea.focus();
+    }
+
+    // ─── Main Calculate ─────────────────────────────────────────────────────
+    function calculate() {
+      const rawPrice = parseFloat(publicPriceEl.value);
+
+      // Validation
+      if (!rawPrice || rawPrice <= 0) {
+        publicPriceEl.classList.add('invalid');
+        priceError.classList.add('visible');
+        priceHint.textContent = '';
+        resultArea.classList.remove('visible');
+        return;
+      }
+
+      publicPriceEl.classList.remove('invalid');
+      priceError.classList.remove('visible');
+
+      const houseCount    = getHouseCount();
+      const holdingYears  = parseInt(holdingPeriodEl.value, 10);
+      const ownerAgeMin   = parseInt(ownerAgeEl.value, 10);
+      const isAdjusted    = adjustedAreaEl.checked;
+      const isOneHousehold = oneHouseholdEl.checked;
+
+      // 1세대 1주택 특례 적용 조건: 1세대1주택 체크 AND 공시가격 9억 이하
+      const isOneHouseSpecial = isOneHousehold && (rawPrice <= 90000); // 9억 = 90000만원
+
+      const pt = calcPropertyTax(rawPrice, isOneHouseSpecial);
+      const jb = calcJongbuse(rawPrice, houseCount, isAdjusted, isOneHousehold, holdingYears, ownerAgeMin);
+
+      renderResults(pt, jb);
+    }
+
+    function autoCalculate() {
+      // Only auto-calc if price is already filled
+      if (publicPriceEl.value && parseFloat(publicPriceEl.value) > 0) {
+        calculate();
+      }
+    }
+
+    // ─── Reset ──────────────────────────────────────────────────────────────
+    function resetForm() {
+      publicPriceEl.value = '';
+      priceHint.textContent = '';
+      priceError.classList.remove('visible');
+      publicPriceEl.classList.remove('invalid');
+
+      document.getElementById('houses1').checked = true;
+      holdingPeriodEl.value = '0';
+      ownerAgeEl.value = '0';
+      adjustedAreaEl.checked = false;
+      adjustedAreaLabel.textContent = '해당 없음';
+
+      autoOneHousehold = true;
+      onehouseBadge.textContent = '자동';
+      onehouseBadge.style.background = '';
+      onehouseBadge.style.color = '';
+      onehouseBadge.style.borderColor = '';
+      syncOneHousehold();
+
+      resultArea.classList.remove('visible');
+    }
+
+    // ─── Event Listeners ────────────────────────────────────────────────────
+    $('calcBtn').addEventListener('click', calculate);
+    $('resetBtn').addEventListener('click', resetForm);
+
+    // Keyboard: Enter on input fields triggers calculate
+    publicPriceEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter') calculate();
+    });
+
+    // ─── Init ───────────────────────────────────────────────────────────────
+    syncOneHousehold();
+
+  </script>
+</body>
+</html>
