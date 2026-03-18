@@ -951,7 +951,7 @@ function renderKPICard(ind, d) {
       </div>
       <div class="kpi-card__value">${formatValue(d.current, ind.unit)}</div>
       ${lastDateHTML}
-      <div class="kpi-card__change ${cls}">${arrow}${pct} (전일대비)</div>
+      <div class="kpi-card__change ${cls}">${arrow}${changeAbs}${ind.unit} (${d.changePercent > 0 ? '+' : ''}${pct})</div>
       <div class="kpi-card__source">출처: Yahoo Finance</div>
     </div>
   `;
