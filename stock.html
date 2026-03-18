@@ -727,6 +727,63 @@
 
 <script>
 // ─────────────────────────────────────────────
+//  한국 주요 종목 사전 (한글 검색 지원)
+// ─────────────────────────────────────────────
+const KR_STOCK_DICT = [
+  // KOSPI 주요 종목
+  { symbol: '005930.KS', name: '삼성전자', nameEn: 'Samsung Electronics', exchange: 'KSE' },
+  { symbol: '000660.KS', name: 'SK하이닉스', nameEn: 'SK Hynix', exchange: 'KSE' },
+  { symbol: '373220.KS', name: 'LG에너지솔루션', nameEn: 'LG Energy Solution', exchange: 'KSE' },
+  { symbol: '207940.KS', name: '삼성바이오로직스', nameEn: 'Samsung Biologics', exchange: 'KSE' },
+  { symbol: '005935.KS', name: '삼성전자우', nameEn: 'Samsung Electronics Pref', exchange: 'KSE' },
+  { symbol: '006400.KS', name: '삼성SDI', nameEn: 'Samsung SDI', exchange: 'KSE' },
+  { symbol: '051910.KS', name: 'LG화학', nameEn: 'LG Chem', exchange: 'KSE' },
+  { symbol: '035420.KS', name: 'NAVER', nameEn: 'Naver', exchange: 'KSE' },
+  { symbol: '035720.KS', name: '카카오', nameEn: 'Kakao', exchange: 'KSE' },
+  { symbol: '005380.KS', name: '현대자동차', nameEn: 'Hyundai Motor', exchange: 'KSE' },
+  { symbol: '000270.KS', name: '기아', nameEn: 'Kia', exchange: 'KSE' },
+  { symbol: '068270.KS', name: '셀트리온', nameEn: 'Celltrion', exchange: 'KSE' },
+  { symbol: '028260.KS', name: '삼성물산', nameEn: 'Samsung C&T', exchange: 'KSE' },
+  { symbol: '105560.KS', name: 'KB금융', nameEn: 'KB Financial', exchange: 'KSE' },
+  { symbol: '055550.KS', name: '신한지주', nameEn: 'Shinhan Financial', exchange: 'KSE' },
+  { symbol: '003550.KS', name: 'LG', nameEn: 'LG Corp', exchange: 'KSE' },
+  { symbol: '066570.KS', name: 'LG전자', nameEn: 'LG Electronics', exchange: 'KSE' },
+  { symbol: '032830.KS', name: '삼성생명', nameEn: 'Samsung Life Insurance', exchange: 'KSE' },
+  { symbol: '003670.KS', name: '포스코퓨처엠', nameEn: 'POSCO Future M', exchange: 'KSE' },
+  { symbol: '005490.KS', name: 'POSCO홀딩스', nameEn: 'POSCO Holdings', exchange: 'KSE' },
+  { symbol: '012330.KS', name: '현대모비스', nameEn: 'Hyundai Mobis', exchange: 'KSE' },
+  { symbol: '034730.KS', name: 'SK', nameEn: 'SK Inc', exchange: 'KSE' },
+  { symbol: '096770.KS', name: 'SK이노베이션', nameEn: 'SK Innovation', exchange: 'KSE' },
+  { symbol: '030200.KS', name: 'KT', nameEn: 'KT Corp', exchange: 'KSE' },
+  { symbol: '017670.KS', name: 'SK텔레콤', nameEn: 'SK Telecom', exchange: 'KSE' },
+  { symbol: '009150.KS', name: '삼성전기', nameEn: 'Samsung Electro-Mechanics', exchange: 'KSE' },
+  { symbol: '018260.KS', name: '삼성에스디에스', nameEn: 'Samsung SDS', exchange: 'KSE' },
+  { symbol: '086790.KS', name: '하나금융지주', nameEn: 'Hana Financial', exchange: 'KSE' },
+  { symbol: '316140.KS', name: '우리금융지주', nameEn: 'Woori Financial', exchange: 'KSE' },
+  { symbol: '323410.KS', name: '카카오뱅크', nameEn: 'KakaoBank', exchange: 'KSE' },
+  { symbol: '377300.KS', name: '카카오페이', nameEn: 'KakaoPay', exchange: 'KSE' },
+  { symbol: '036570.KS', name: '엔씨소프트', nameEn: 'NCSoft', exchange: 'KSE' },
+  { symbol: '251270.KS', name: '넷마블', nameEn: 'Netmarble', exchange: 'KSE' },
+  { symbol: '263750.KS', name: '펄어비스', nameEn: 'Pearl Abyss', exchange: 'KSE' },
+  { symbol: '352820.KS', name: '하이브', nameEn: 'HYBE', exchange: 'KSE' },
+  { symbol: '259960.KS', name: '크래프톤', nameEn: 'Krafton', exchange: 'KSE' },
+  { symbol: '011200.KS', name: 'HMM', nameEn: 'HMM', exchange: 'KSE' },
+  { symbol: '010130.KS', name: '고려아연', nameEn: 'Korea Zinc', exchange: 'KSE' },
+  { symbol: '047050.KS', name: '포스코인터내셔널', nameEn: 'POSCO International', exchange: 'KSE' },
+  { symbol: '034020.KS', name: '두산에너빌리티', nameEn: 'Doosan Enerbility', exchange: 'KSE' },
+  { symbol: '041510.KS', name: 'SM엔터테인먼트', nameEn: 'SM Entertainment', exchange: 'KSE' },
+  // KOSDAQ 주요 종목
+  { symbol: '247540.KQ', name: '에코프로비엠', nameEn: 'EcoPro BM', exchange: 'KOSDAQ' },
+  { symbol: '086520.KQ', name: '에코프로', nameEn: 'EcoPro', exchange: 'KOSDAQ' },
+  { symbol: '293490.KQ', name: '카카오게임즈', nameEn: 'Kakao Games', exchange: 'KOSDAQ' },
+  { symbol: '196170.KQ', name: '알테오젠', nameEn: 'Alteogen', exchange: 'KOSDAQ' },
+  { symbol: '403870.KQ', name: 'HPSP', nameEn: 'HPSP', exchange: 'KOSDAQ' },
+  { symbol: '145020.KQ', name: '휴젤', nameEn: 'Hugel', exchange: 'KOSDAQ' },
+  { symbol: '112040.KQ', name: '위메이드', nameEn: 'WeMade', exchange: 'KOSDAQ' },
+  { symbol: '035900.KQ', name: 'JYP엔터테인먼트', nameEn: 'JYP Entertainment', exchange: 'KOSDAQ' },
+];
+
+// ─────────────────────────────────────────────
 //  지표 목록 — 여기에 추가하면 카드+차트 자동 생성
 // ─────────────────────────────────────────────
 const INDICATORS = [
@@ -1746,7 +1803,7 @@ function formatLastMarketDateLabel(dateStr) {
 function getStockMeta(exchange) {
   if (!exchange) return { unit: '', emoji: '📈' };
   const ex = exchange.toUpperCase();
-  if (ex.includes('KSC') || ex.includes('KOE') || ex.includes('KRX') || ex.includes('KOS')) {
+  if (ex === 'KSE' || ex === 'KOSDAQ' || ex.includes('KSC') || ex.includes('KOE') || ex.includes('KRX') || ex.includes('KOS')) {
     return { unit: '원', emoji: '🇰🇷' };
   }
   if (['NYQ','NYS','NAS','PCX','NGM','NCM','ASE'].some(e => ex.includes(e))) {
@@ -1790,44 +1847,86 @@ function removeStock(symbol) {
 }
 
 // ─────────────────────────────────────────────
-//  종목 검색
+//  종목 검색 결과 렌더링 헬퍼
+// ─────────────────────────────────────────────
+function renderSearchResults(resultsEl, results) {
+  resultsEl.innerHTML = results.slice(0, 10).map(r => `
+    <div class="search-result-item" data-symbol="${escapeHtml(r.symbol)}" data-name="${escapeHtml(r.name)}" data-exchange="${escapeHtml(r.exchange || '')}">
+      <span>${escapeHtml(r.name)}</span>
+      <span style="color:var(--text-muted);font-size:0.8rem;">${escapeHtml(r.symbol)} · ${escapeHtml(r.exchange || '')}</span>
+    </div>
+  `).join('');
+  resultsEl.querySelectorAll('.search-result-item').forEach(item => {
+    item.addEventListener('click', () => {
+      addStock({
+        symbol: item.dataset.symbol,
+        name: item.dataset.name,
+        exchange: item.dataset.exchange,
+      });
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+//  종목 검색 — 로컬 사전(한글) + Yahoo API 병행
 // ─────────────────────────────────────────────
 async function searchStocks(query) {
+  const q = query.trim();
   const resultsEl = document.getElementById('search-results');
-  if (!query.trim()) {
+  if (!q) {
     resultsEl.style.display = 'none';
     return;
   }
-  resultsEl.innerHTML = '<div style="padding:0.75rem 1rem;color:var(--text-muted);font-size:0.85rem;">검색 중...</div>';
   resultsEl.style.display = 'block';
-  try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    const results = data.results || [];
-    if (results.length === 0) {
-      resultsEl.innerHTML = '<div style="padding:0.75rem 1rem;color:var(--text-muted);font-size:0.85rem;">검색 결과 없음</div>';
-      return;
-    }
-    resultsEl.innerHTML = results.map(r => `
-      <div class="search-result-item" data-symbol="${escapeHtml(r.symbol)}" data-name="${escapeHtml(r.name)}" data-exchange="${escapeHtml(r.exchange || '')}">
-        <span>${escapeHtml(r.name)}</span>
-        <span style="color:var(--text-muted);font-size:0.8rem;">${escapeHtml(r.symbol)} · ${escapeHtml(r.exchange || '')}</span>
-      </div>
-    `).join('');
-    resultsEl.querySelectorAll('.search-result-item').forEach(item => {
-      item.addEventListener('click', () => {
-        addStock({
-          symbol: item.dataset.symbol,
-          name: item.dataset.name,
-          exchange: item.dataset.exchange,
-        });
-      });
-    });
-  } catch (err) {
-    console.error('searchStocks error:', err);
-    resultsEl.innerHTML = '<div style="padding:0.75rem 1rem;color:var(--negative);font-size:0.85rem;">검색 실패. 다시 시도해 주세요.</div>';
+
+  // 1. 로컬 사전 즉시 검색 (한글/영문/심볼 모두)
+  const localResults = KR_STOCK_DICT.filter(s =>
+    s.name.toLowerCase().includes(q.toLowerCase()) ||
+    s.nameEn.toLowerCase().includes(q.toLowerCase()) ||
+    s.symbol.toLowerCase().includes(q.toLowerCase())
+  ).map(s => ({
+    symbol: s.symbol,
+    name: s.name,
+    exchange: s.exchange,
+    type: 'EQUITY'
+  }));
+
+  // 로컬 결과 즉시 표시 (API 응답 대기 없이)
+  if (localResults.length > 0) {
+    renderSearchResults(resultsEl, localResults);
+  } else {
+    resultsEl.innerHTML = '<div style="padding:0.75rem 1rem;color:var(--text-muted);font-size:0.85rem;">검색 중...</div>';
   }
+
+  // 2. Yahoo API 검색 (비동기 병행)
+  let apiResults = [];
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+    if (res.ok) {
+      const data = await res.json();
+      apiResults = data.results || [];
+    }
+  } catch(e) {
+    console.warn('searchStocks API error:', e);
+  }
+
+  // 3. 병합 (로컬 우선, 중복 제거, 로컬 사전에 있으면 한글 이름으로 덮어쓰기)
+  const seen = new Set();
+  const merged = [];
+  for (const r of [...localResults, ...apiResults]) {
+    if (!seen.has(r.symbol)) {
+      seen.add(r.symbol);
+      const local = KR_STOCK_DICT.find(s => s.symbol === r.symbol);
+      merged.push({ ...r, name: local ? local.name : r.name });
+    }
+  }
+
+  if (merged.length === 0) {
+    resultsEl.innerHTML = '<div style="padding:0.75rem 1rem;color:var(--text-muted);font-size:0.85rem;">검색 결과 없음</div>';
+    return;
+  }
+
+  renderSearchResults(resultsEl, merged);
 }
 
 document.getElementById('stock-search-btn').addEventListener('click', () => {
