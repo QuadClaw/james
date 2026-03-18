@@ -91,13 +91,21 @@ async function fetchSymbol(symbol, range, interval) {
     const dailyJson = await fetchRawYahoo(symbol, '5d', '1d');
     const { history: dailyHistory } = parseHistory(dailyJson, '1d');
 
-    // dailyHistory에서 close가 null이 아닌 것만 필터 (Yahoo가 당일 미완료 데이터를 null로 줌)
+    // dailyHistory에서 close가 null이 아닌 것만 필터
     const validDays = dailyHistory.filter(h => h.close != null);
 
-    if (validDays.length >= 2) {
+    // 같은 날짜가 중복되면 마지막 것만 남김 (환율 등 24시간 거래 종목은 당일 entry가 2개)
+    const byDate = new Map();
+    for (const day of validDays) {
+      const dateKey = day.date.split('T')[0];
+      byDate.set(dateKey, day);
+    }
+    const uniqueDays = [...byDate.values()];
+
+    if (uniqueDays.length >= 2) {
       // 마지막 = 오늘(또는 가장 최근 거래일), 그 전 = 전일
-      previousClose = validDays[validDays.length - 2].close;
-      previousCloseDate = validDays[validDays.length - 2].date.split('T')[0];
+      previousClose = uniqueDays[uniqueDays.length - 2].close;
+      previousCloseDate = uniqueDays[uniqueDays.length - 2].date.split('T')[0];
     } else {
       // fallback to meta
       previousClose = meta.chartPreviousClose ?? meta.previousClose ?? null;
