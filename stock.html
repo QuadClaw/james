@@ -1833,8 +1833,21 @@ async function searchStocks(query) {
 document.getElementById('stock-search-btn').addEventListener('click', () => {
   searchStocks(document.getElementById('stock-search-input').value);
 });
+
+// Autocomplete: debounced search on input (min 1 char)
+let _searchTimer = null;
+document.getElementById('stock-search-input').addEventListener('input', e => {
+  clearTimeout(_searchTimer);
+  const q = e.target.value.trim();
+  if (q.length >= 1) {
+    _searchTimer = setTimeout(() => searchStocks(q), 300);
+  } else {
+    document.getElementById('search-results').style.display = 'none';
+  }
+});
+
 document.getElementById('stock-search-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') searchStocks(e.target.value);
+  if (e.key === 'Enter') { clearTimeout(_searchTimer); searchStocks(e.target.value); }
   if (e.key === 'Escape') document.getElementById('search-results').style.display = 'none';
 });
 document.addEventListener('click', e => {
