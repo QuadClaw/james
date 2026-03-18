@@ -373,40 +373,48 @@
     /* Chart card header: title + per-chart period toggle */
     .chart-card__header {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
+      flex-direction: column;
+      gap: 4px;
       margin-bottom: 0.5rem;
     }
 
+    .chart-card__header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
     .chart-card__title {
-      font-size: 0.85rem;
+      font-size: 0.95rem;
       font-weight: 600;
-      color: var(--text-muted);
+      color: #e2e8f0;
       display: flex;
       align-items: center;
       gap: 0.4rem;
       flex: 1;
       min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .chart-card__price-info {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       gap: 8px;
-      margin-top: -4px;
-      margin-bottom: 4px;
-      padding: 0 12px;
+      padding: 0;
+      margin: 0;
     }
     .chart-card__current {
-      font-size: 1.25rem;
+      font-size: 1.1rem;
       font-weight: 700;
-      color: #e2e8f0;
+      color: #f1f5f9;
     }
     .chart-card__change {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 600;
-      padding: 2px 8px;
+      padding: 2px 6px;
       border-radius: 4px;
     }
     .chart-card__change.up {
@@ -680,6 +688,19 @@
     .btn-remove-stock:hover {
       color: var(--negative);
       background: rgba(239,68,68,0.1);
+    }
+
+    @media (max-width: 600px) {
+      .chart-card__header-top {
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .chart-card__title {
+        font-size: 0.85rem;
+      }
+      .chart-card__current {
+        font-size: 1rem;
+      }
     }
   </style>
 </head>
@@ -987,29 +1008,31 @@ function buildChartCardHTML(ind, i, history, lastTradeDate, changePercent, curre
   return `
     <div class="chart-card" id="chart-${escapeHtml(ind.symbol)}">
       <div class="chart-card__header">
-        <div class="chart-card__title">
-          <span aria-hidden="true">${ind.emoji}</span>
-          ${escapeHtml(ind.name)}${titleLabel ? ` ${titleLabel}` : ''}
+        <div class="chart-card__header-top">
+          <div class="chart-card__title">
+            <span aria-hidden="true">${ind.emoji}</span>
+            ${escapeHtml(ind.name)}${titleLabel ? ` ${titleLabel}` : ''}
+          </div>
+          <div class="chart-period-toggle" role="group" aria-label="${escapeHtml(ind.name)} 기간 선택">
+            ${PERIOD_OPTIONS.map(opt => `
+              <button
+                class="btn-chart-period"
+                data-idx="${i}"
+                data-symbol="${escapeHtml(ind.symbol)}"
+                data-range="${opt.range}"
+                data-interval="${opt.interval}"
+                data-label="${opt.label}"
+                aria-pressed="${period.range === opt.range}"
+                aria-label="${escapeHtml(ind.name)} ${opt.label} 보기"
+              >${opt.label}</button>
+            `).join('')}
+          </div>
         </div>
         <div class="chart-card__price-info">
           <span class="chart-card__current">${current != null ? formatValue(current, ind.unit) : ''}</span>
           <span class="chart-card__change ${changeClass(changePercent)}">
             ${changePercent != null ? `${changeArrow(changePercent)}${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%` : ''}
           </span>
-        </div>
-        <div class="chart-period-toggle" role="group" aria-label="${escapeHtml(ind.name)} 기간 선택">
-          ${PERIOD_OPTIONS.map(opt => `
-            <button
-              class="btn-chart-period"
-              data-idx="${i}"
-              data-symbol="${escapeHtml(ind.symbol)}"
-              data-range="${opt.range}"
-              data-interval="${opt.interval}"
-              data-label="${opt.label}"
-              aria-pressed="${period.range === opt.range}"
-              aria-label="${escapeHtml(ind.name)} ${opt.label} 보기"
-            >${opt.label}</button>
-          `).join('')}
         </div>
       </div>
       ${renderChartStatsHTML(stats, ind.unit, ind.name)}
@@ -1387,32 +1410,34 @@ function buildStocksChartCardHTML(ind, i, history, lastTradeDate, changePercent,
   return `
     <div class="chart-card" id="chart-${escapeHtml(ind.symbol)}">
       <div class="chart-card__header">
-        <div class="chart-card__title">
-          <span aria-hidden="true">${ind.emoji}</span>
-          ${escapeHtml(ind.name)}${titleLabel ? ` ${titleLabel}` : ''}
+        <div class="chart-card__header-top">
+          <div class="chart-card__title">
+            <span aria-hidden="true">${ind.emoji}</span>
+            ${escapeHtml(ind.name)}${titleLabel ? ` ${titleLabel}` : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div class="chart-period-toggle" role="group" aria-label="${escapeHtml(ind.name)} 기간 선택">
+              ${PERIOD_OPTIONS.map(opt => `
+                <button
+                  class="btn-chart-period btn-stocks-period"
+                  data-idx="${i}"
+                  data-symbol="${escapeHtml(ind.symbol)}"
+                  data-range="${opt.range}"
+                  data-interval="${opt.interval}"
+                  data-label="${opt.label}"
+                  aria-pressed="${period.range === opt.range}"
+                  aria-label="${escapeHtml(ind.name)} ${opt.label} 보기"
+                >${opt.label}</button>
+              `).join('')}
+            </div>
+            <button class="btn-remove-stock" data-symbol="${escapeHtml(ind.symbol)}" aria-label="${escapeHtml(ind.name)} 종목 삭제" title="종목 삭제">✕</button>
+          </div>
         </div>
         <div class="chart-card__price-info">
           <span class="chart-card__current">${current != null ? formatValue(current, ind.unit) : ''}</span>
           <span class="chart-card__change ${changeClass(changePercent)}">
             ${changePercent != null ? `${changeArrow(changePercent)}${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%` : ''}
           </span>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <div class="chart-period-toggle" role="group" aria-label="${escapeHtml(ind.name)} 기간 선택">
-            ${PERIOD_OPTIONS.map(opt => `
-              <button
-                class="btn-chart-period btn-stocks-period"
-                data-idx="${i}"
-                data-symbol="${escapeHtml(ind.symbol)}"
-                data-range="${opt.range}"
-                data-interval="${opt.interval}"
-                data-label="${opt.label}"
-                aria-pressed="${period.range === opt.range}"
-                aria-label="${escapeHtml(ind.name)} ${opt.label} 보기"
-              >${opt.label}</button>
-            `).join('')}
-          </div>
-          <button class="btn-remove-stock" data-symbol="${escapeHtml(ind.symbol)}" aria-label="${escapeHtml(ind.name)} 종목 삭제" title="종목 삭제">✕</button>
         </div>
       </div>
       ${renderChartStatsHTML(stats, ind.unit, ind.name)}
