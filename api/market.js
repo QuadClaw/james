@@ -83,17 +83,36 @@ async function fetchSymbol(symbol, range, interval) {
   }
 
   const current = meta.regularMarketPrice ?? meta.previousClose ?? null;
-  const previousClose = meta.chartPreviousClose ?? meta.previousClose ?? null;
+
+  // previousClose: 5d 일봉에서 직전 거래일 종가를 직접 가져옴 (Yahoo meta가 부정확할 수 있음)
+  let previousClose = null;
+  let previousCloseDate = null;
+  try {
+    const dailyJson = await fetchRawYahoo(symbol, '5d', '1d');
+    const { history: dailyHistory } = parseHistory(dailyJson, '1d');
+
+    // dailyHistory에서 close가 null이 아닌 것만 필터 (Yahoo가 당일 미완료 데이터를 null로 줌)
+    const validDays = dailyHistory.filter(h => h.close != null);
+
+    if (validDays.length >= 2) {
+      // 마지막 = 오늘(또는 가장 최근 거래일), 그 전 = 전일
+      previousClose = validDays[validDays.length - 2].close;
+      previousCloseDate = validDays[validDays.length - 2].date.split('T')[0];
+    } else {
+      // fallback to meta
+      previousClose = meta.chartPreviousClose ?? meta.previousClose ?? null;
+    }
+  } catch (e) {
+    // fallback to meta
+    previousClose = meta.chartPreviousClose ?? meta.previousClose ?? null;
+  }
 
   // lastMarketDate: regularMarketTime 자체의 날짜 (가장 최근 거래일)
-  // previousCloseDate: 그 하루 전 날짜 (전일 종가 기준일, 주말/공휴일 미고려 추산)
+  // previousCloseDate는 이미 5d 데이터에서 구함
   let lastMarketDate = null;
-  let previousCloseDate = null;
   if (meta.regularMarketTime) {
     const lastD = new Date(meta.regularMarketTime * 1000);
     lastMarketDate = lastD.toISOString().split('T')[0];
-    const prevD = new Date((meta.regularMarketTime - 86400) * 1000);
-    previousCloseDate = prevD.toISOString().split('T')[0];
   }
 
   const change = current != null && previousClose != null

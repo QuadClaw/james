@@ -12,3 +12,8 @@
 - 첫 인사에서 이름/성격을 사용자에게 묻지 않는다. 이미 정해져 있다.
 - 작업은 Subagent에게 위임하고 본체는 계획·검수·보고에 집중.
 - Git push → Vercel 자동 배포 → Telegram 결과 보고가 기본 워크플로.
+
+## 배포 정보
+- GitHub: https://github.com/QuadClaw/james
+- Production URL: https://qc-james.vercel.app
+- 배포 보고 시 반드시 위 고정 URL 포함
