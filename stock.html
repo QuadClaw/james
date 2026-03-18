@@ -883,6 +883,18 @@ function changeArrow(pct) {
   return '';
 }
 
+function formatChangeText(change, changePercent, unit) {
+  if (changePercent == null) return '';
+  const arrow = changeArrow(changePercent);
+  const sign = change > 0 ? '+' : change < 0 ? '-' : '';
+  const absChange = change != null ? formatValue(Math.abs(change), unit) : '';
+  const pctSign = changePercent > 0 ? '+' : '';
+  if (absChange) {
+    return `${arrow}${sign}${absChange}${unit} (${pctSign}${changePercent.toFixed(2)}%)`;
+  }
+  return `${arrow}${pctSign}${changePercent.toFixed(2)}%`;
+}
+
 // ─────────────────────────────────────────────
 //  Skeleton Rendering
 // ─────────────────────────────────────────────
@@ -992,7 +1004,7 @@ function renderChartStatsHTML(stats, unit, indName) {
 // ─────────────────────────────────────────────
 
 /** Build chart card HTML for one indicator */
-function buildChartCardHTML(ind, i, history, lastTradeDate, changePercent, current) {
+function buildChartCardHTML(ind, i, history, lastTradeDate, changePercent, current, change) {
   const period = chartPeriods[ind.symbol];
   const stats  = calcChartStats(history, ind.unit);
 
@@ -1025,7 +1037,7 @@ function buildChartCardHTML(ind, i, history, lastTradeDate, changePercent, curre
         <div class="chart-card__price-info">
           <span class="chart-card__current">${current != null ? formatValue(current, ind.unit) : ''}</span>
           <span class="chart-card__change ${changeClass(changePercent)}">
-            ${changePercent != null ? `${changeArrow(changePercent)}${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%` : ''}
+            ${formatChangeText(change, changePercent, ind.unit)}
           </span>
         </div>
       </div>
@@ -1049,7 +1061,7 @@ function renderCharts(data) {
     const d = data[ind.symbol];
     const history = d?.history || [];
     const lastTradeDate = d?.lastTradeDate || null;
-    return buildChartCardHTML(ind, i, history, lastTradeDate, d?.changePercent, d?.current);
+    return buildChartCardHTML(ind, i, history, lastTradeDate, d?.changePercent, d?.current, d?.change);
   }).join('');
 
   // Draw each chart
@@ -1168,7 +1180,7 @@ function drawChart(ind, i, history, changePercent) {
 }
 
 /** Update one chart card after a period change */
-function updateSingleChartCard(ind, i, history, lastTradeDate, changePercent, current) {
+function updateSingleChartCard(ind, i, history, lastTradeDate, changePercent, current, change) {
   const period = chartPeriods[ind.symbol];
   const card   = document.getElementById(`chart-${ind.symbol}`);
   if (!card) return;
@@ -1194,9 +1206,7 @@ function updateSingleChartCard(ind, i, history, lastTradeDate, changePercent, cu
     if (currentEl) currentEl.textContent = current != null ? formatValue(current, ind.unit) : '';
     if (changeEl) {
       changeEl.className = `chart-card__change ${changeClass(changePercent)}`;
-      changeEl.textContent = changePercent != null
-        ? `${changeArrow(changePercent)}${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%`
-        : '';
+      changeEl.textContent = formatChangeText(change, changePercent, ind.unit);
     }
   }
 
@@ -1280,7 +1290,7 @@ async function fetchSingleChart(ind, idx) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     const d    = json.data?.[ind.symbol];
-    updateSingleChartCard(ind, idx, d?.history || [], d?.lastTradeDate || null, d?.changePercent, d?.current);
+    updateSingleChartCard(ind, idx, d?.history || [], d?.lastTradeDate || null, d?.changePercent, d?.current, d?.change);
   } catch (err) {
     console.error(`fetchSingleChart error [${ind.symbol}]:`, err);
     // Restore buttons on error
@@ -1395,7 +1405,7 @@ function renderStocksKPICards(data) {
 // ─────────────────────────────────────────────
 //  개별종목 — Chart Card HTML
 // ─────────────────────────────────────────────
-function buildStocksChartCardHTML(ind, i, history, lastTradeDate, changePercent, current) {
+function buildStocksChartCardHTML(ind, i, history, lastTradeDate, changePercent, current, change) {
   const period = stockChartPeriods[ind.symbol];
   const stats  = calcChartStats(history, ind.unit);
   const dateSuffix = period.range === '1d' ? formatLastTradeDateSuffix(lastTradeDate) : '';
@@ -1429,7 +1439,7 @@ function buildStocksChartCardHTML(ind, i, history, lastTradeDate, changePercent,
         <div class="chart-card__price-info">
           <span class="chart-card__current">${current != null ? formatValue(current, ind.unit) : ''}</span>
           <span class="chart-card__change ${changeClass(changePercent)}">
-            ${changePercent != null ? `${changeArrow(changePercent)}${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%` : ''}
+            ${formatChangeText(change, changePercent, ind.unit)}
           </span>
         </div>
       </div>
@@ -1540,7 +1550,7 @@ function renderStocksCharts(data) {
 
   grid.innerHTML = STOCKS.map((ind, i) => {
     const d = data[ind.symbol];
-    return buildStocksChartCardHTML(ind, i, d?.history || [], d?.lastTradeDate || null, d?.changePercent, d?.current);
+    return buildStocksChartCardHTML(ind, i, d?.history || [], d?.lastTradeDate || null, d?.changePercent, d?.current, d?.change);
   }).join('');
 
   STOCKS.forEach((ind, i) => {
@@ -1553,7 +1563,7 @@ function renderStocksCharts(data) {
 // ─────────────────────────────────────────────
 //  개별종목 — Update Single Chart Card (period change)
 // ─────────────────────────────────────────────
-function updateSingleStocksChartCard(ind, i, history, lastTradeDate, changePercent, current) {
+function updateSingleStocksChartCard(ind, i, history, lastTradeDate, changePercent, current, change) {
   const period = stockChartPeriods[ind.symbol];
   const card   = document.getElementById(`chart-${ind.symbol}`);
   if (!card) return;
@@ -1575,9 +1585,7 @@ function updateSingleStocksChartCard(ind, i, history, lastTradeDate, changePerce
     if (currentEl) currentEl.textContent = current != null ? formatValue(current, ind.unit) : '';
     if (changeEl) {
       changeEl.className = `chart-card__change ${changeClass(changePercent)}`;
-      changeEl.textContent = changePercent != null
-        ? `${changeArrow(changePercent)}${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%`
-        : '';
+      changeEl.textContent = formatChangeText(change, changePercent, ind.unit);
     }
   }
 
@@ -1647,7 +1655,7 @@ async function fetchSingleStocksChart(ind, idx) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     const d    = json.data?.[ind.symbol];
-    updateSingleStocksChartCard(ind, idx, d?.history || [], d?.lastTradeDate || null, d?.changePercent, d?.current);
+    updateSingleStocksChartCard(ind, idx, d?.history || [], d?.lastTradeDate || null, d?.changePercent, d?.current, d?.change);
   } catch (err) {
     console.error(`fetchSingleStocksChart error [${ind.symbol}]:`, err);
   } finally {
