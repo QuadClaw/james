@@ -390,6 +390,37 @@
       min-width: 0;
     }
 
+    .chart-card__price-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: -4px;
+      margin-bottom: 4px;
+      padding: 0 12px;
+    }
+    .chart-card__current {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+    .chart-card__change {
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .chart-card__change.up {
+      color: var(--positive);
+      background: rgba(34,197,94,0.1);
+    }
+    .chart-card__change.down {
+      color: var(--negative);
+      background: rgba(239,68,68,0.1);
+    }
+    .chart-card__change.flat {
+      color: var(--neutral);
+    }
+
     /* Per-chart price stats bar */
     .chart-stats {
       display: flex;
@@ -945,7 +976,7 @@ function renderChartStatsHTML(stats, unit, indName) {
 // ─────────────────────────────────────────────
 
 /** Build chart card HTML for one indicator */
-function buildChartCardHTML(ind, i, history, lastTradeDate) {
+function buildChartCardHTML(ind, i, history, lastTradeDate, changePercent, current) {
   const period = chartPeriods[ind.symbol];
   const stats  = calcChartStats(history, ind.unit);
 
@@ -959,6 +990,12 @@ function buildChartCardHTML(ind, i, history, lastTradeDate) {
         <div class="chart-card__title">
           <span aria-hidden="true">${ind.emoji}</span>
           ${escapeHtml(ind.name)}${titleLabel ? ` ${titleLabel}` : ''}
+        </div>
+        <div class="chart-card__price-info">
+          <span class="chart-card__current">${current != null ? formatValue(current, ind.unit) : ''}</span>
+          <span class="chart-card__change ${changeClass(changePercent)}">
+            ${changePercent != null ? `${changeArrow(changePercent)}${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%` : ''}
+          </span>
         </div>
         <div class="chart-period-toggle" role="group" aria-label="${escapeHtml(ind.name)} 기간 선택">
           ${PERIOD_OPTIONS.map(opt => `
@@ -995,7 +1032,7 @@ function renderCharts(data) {
     const d = data[ind.symbol];
     const history = d?.history || [];
     const lastTradeDate = d?.lastTradeDate || null;
-    return buildChartCardHTML(ind, i, history, lastTradeDate);
+    return buildChartCardHTML(ind, i, history, lastTradeDate, d?.changePercent, d?.current);
   }).join('');
 
   // Draw each chart
@@ -1114,7 +1151,7 @@ function drawChart(ind, i, history) {
 }
 
 /** Update one chart card after a period change */
-function updateSingleChartCard(ind, i, history, lastTradeDate) {
+function updateSingleChartCard(ind, i, history, lastTradeDate, changePercent, current) {
   const period = chartPeriods[ind.symbol];
   const card   = document.getElementById(`chart-${ind.symbol}`);
   if (!card) return;
@@ -1130,6 +1167,20 @@ function updateSingleChartCard(ind, i, history, lastTradeDate) {
   const titleEl = card.querySelector('.chart-card__title');
   if (titleEl) {
     titleEl.innerHTML = `<span aria-hidden="true">${ind.emoji}</span> ${escapeHtml(ind.name)}${titleLabel ? ` ${titleLabel}` : ''}`;
+  }
+
+  // Update price info
+  const priceInfoEl = card.querySelector('.chart-card__price-info');
+  if (priceInfoEl) {
+    const currentEl = priceInfoEl.querySelector('.chart-card__current');
+    const changeEl  = priceInfoEl.querySelector('.chart-card__change');
+    if (currentEl) currentEl.textContent = current != null ? formatValue(current, ind.unit) : '';
+    if (changeEl) {
+      changeEl.className = `chart-card__change ${changeClass(changePercent)}`;
+      changeEl.textContent = changePercent != null
+        ? `${changeArrow(changePercent)}${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%`
+        : '';
+    }
   }
 
   // Update stats
@@ -1212,7 +1263,7 @@ async function fetchSingleChart(ind, idx) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     const d    = json.data?.[ind.symbol];
-    updateSingleChartCard(ind, idx, d?.history || [], d?.lastTradeDate || null);
+    updateSingleChartCard(ind, idx, d?.history || [], d?.lastTradeDate || null, d?.changePercent, d?.current);
   } catch (err) {
     console.error(`fetchSingleChart error [${ind.symbol}]:`, err);
     // Restore buttons on error
@@ -1327,7 +1378,7 @@ function renderStocksKPICards(data) {
 // ─────────────────────────────────────────────
 //  개별종목 — Chart Card HTML
 // ─────────────────────────────────────────────
-function buildStocksChartCardHTML(ind, i, history, lastTradeDate) {
+function buildStocksChartCardHTML(ind, i, history, lastTradeDate, changePercent, current) {
   const period = stockChartPeriods[ind.symbol];
   const stats  = calcChartStats(history, ind.unit);
   const dateSuffix = period.range === '1d' ? formatLastTradeDateSuffix(lastTradeDate) : '';
@@ -1339,6 +1390,12 @@ function buildStocksChartCardHTML(ind, i, history, lastTradeDate) {
         <div class="chart-card__title">
           <span aria-hidden="true">${ind.emoji}</span>
           ${escapeHtml(ind.name)}${titleLabel ? ` ${titleLabel}` : ''}
+        </div>
+        <div class="chart-card__price-info">
+          <span class="chart-card__current">${current != null ? formatValue(current, ind.unit) : ''}</span>
+          <span class="chart-card__change ${changeClass(changePercent)}">
+            ${changePercent != null ? `${changeArrow(changePercent)}${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%` : ''}
+          </span>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           <div class="chart-period-toggle" role="group" aria-label="${escapeHtml(ind.name)} 기간 선택">
@@ -1465,7 +1522,7 @@ function renderStocksCharts(data) {
 
   grid.innerHTML = STOCKS.map((ind, i) => {
     const d = data[ind.symbol];
-    return buildStocksChartCardHTML(ind, i, d?.history || [], d?.lastTradeDate || null);
+    return buildStocksChartCardHTML(ind, i, d?.history || [], d?.lastTradeDate || null, d?.changePercent, d?.current);
   }).join('');
 
   STOCKS.forEach((ind, i) => {
@@ -1478,7 +1535,7 @@ function renderStocksCharts(data) {
 // ─────────────────────────────────────────────
 //  개별종목 — Update Single Chart Card (period change)
 // ─────────────────────────────────────────────
-function updateSingleStocksChartCard(ind, i, history, lastTradeDate) {
+function updateSingleStocksChartCard(ind, i, history, lastTradeDate, changePercent, current) {
   const period = stockChartPeriods[ind.symbol];
   const card   = document.getElementById(`chart-${ind.symbol}`);
   if (!card) return;
@@ -1491,6 +1548,19 @@ function updateSingleStocksChartCard(ind, i, history, lastTradeDate) {
   const titleEl = card.querySelector('.chart-card__title');
   if (titleEl) {
     titleEl.innerHTML = `<span aria-hidden="true">${ind.emoji}</span> ${escapeHtml(ind.name)}${titleLabel ? ` ${titleLabel}` : ''}`;
+  }
+
+  const priceInfoEl = card.querySelector('.chart-card__price-info');
+  if (priceInfoEl) {
+    const currentEl = priceInfoEl.querySelector('.chart-card__current');
+    const changeEl  = priceInfoEl.querySelector('.chart-card__change');
+    if (currentEl) currentEl.textContent = current != null ? formatValue(current, ind.unit) : '';
+    if (changeEl) {
+      changeEl.className = `chart-card__change ${changeClass(changePercent)}`;
+      changeEl.textContent = changePercent != null
+        ? `${changeArrow(changePercent)}${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%`
+        : '';
+    }
   }
 
   const statsEl = card.querySelector('.chart-stats');
@@ -1559,7 +1629,7 @@ async function fetchSingleStocksChart(ind, idx) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     const d    = json.data?.[ind.symbol];
-    updateSingleStocksChartCard(ind, idx, d?.history || [], d?.lastTradeDate || null);
+    updateSingleStocksChartCard(ind, idx, d?.history || [], d?.lastTradeDate || null, d?.changePercent, d?.current);
   } catch (err) {
     console.error(`fetchSingleStocksChart error [${ind.symbol}]:`, err);
   } finally {

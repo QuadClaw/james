@@ -54,7 +54,12 @@ async function fetchAllStocks() {
   }).catch(() => []);
 
   const [stocks, etfs] = await Promise.all([krxPromise, etfPromise]);
-  cachedStocks = [...stocks, ...etfs];
+
+  // ETF 코드 집합 → KRX 주식 목록에서 ETF 중복 제거
+  const etfCodes = new Set(etfs.map(e => e.code));
+  const filteredStocks = stocks.filter(s => !etfCodes.has(s.code));
+
+  cachedStocks = [...filteredStocks, ...etfs];
   cacheTime = now;
   return cachedStocks;
 }
@@ -79,7 +84,7 @@ module.exports = async (req, res) => {
         s.code.toLowerCase().includes(q) ||
         s.symbol.toLowerCase().includes(q)
       )
-      .slice(0, 15)
+      .slice(0, 20)
       .map(s => ({
         symbol: s.symbol,
         name: s.name,
