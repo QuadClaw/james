@@ -1171,7 +1171,7 @@ function drawChart(ind, i, history, changePercent) {
           ticks: {
             color: '#64748b',
             font: { size: 11 },
-            callback: v => formatValue(v, ind.unit),
+            callback: v => Math.round(v).toLocaleString('ko-KR'),
           }
         }
       }
@@ -1533,7 +1533,7 @@ function drawStocksChart(ind, i, history, changePercent) {
         },
         y: {
           grid: { color: '#1e293b' },
-          ticks: { color: '#64748b', font: { size: 11 }, callback: v => formatValue(v, ind.unit) }
+          ticks: { color: '#64748b', font: { size: 11 }, callback: v => Math.round(v).toLocaleString('ko-KR') }
         }
       }
     }
