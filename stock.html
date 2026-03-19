@@ -314,6 +314,47 @@
       margin-top: auto;
     }
 
+    /* ===== KPI Card with Investors ===== */
+    .kpi-card--with-investors {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+    @media (max-width: 480px) {
+      .kpi-card--with-investors {
+        grid-template-columns: 1fr;
+      }
+    }
+    .kpi-card__main {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .kpi-card__investors {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 4px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      min-width: 80px;
+    }
+    .kpi-card__investor-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 4px;
+    }
+    .kpi-card__investor-label {
+      color: #64748b;
+    }
+    .kpi-card__investor-value {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi-card__investor-value.up { color: var(--positive); }
+    .kpi-card__investor-value.down { color: var(--negative); }
+
     /* ===== Skeleton ===== */
     .skeleton {
       background: var(--bg-card);
@@ -811,6 +852,7 @@ let stockCharts = {};          // symbol → Chart instance (개별종목)
 let autoRefreshTimer = null;
 let isLoading = false;
 let isStocksLoading = false;
+let investorData = null;       // 투자자별 매매동향 (코스피/코스닥)
 
 // Per-chart period state — default: 1일
 const chartPeriods = {};       // symbol → { range, interval, label }
@@ -942,6 +984,51 @@ function renderKPICard(ind, d) {
   const lastDateHTML = lastDateLabel
     ? `<div class="kpi-card__date">${escapeHtml(lastDateLabel)}</div>`
     : '';
+
+  // 코스피/코스닥만 투자자 데이터 표시
+  let investorHTML = '';
+  if (investorData && (ind.symbol === '^KS11' || ind.symbol === '^KQ11')) {
+    const inv = ind.symbol === '^KS11' ? investorData.kospi : investorData.kosdaq;
+    if (inv) {
+      const fmt = (v) => {
+        if (v == null) return '<span class="kpi-card__investor-value">—</span>';
+        const sign = v > 0 ? '+' : '';
+        const cls = v > 0 ? 'up' : v < 0 ? 'down' : '';
+        return `<span class="kpi-card__investor-value ${cls}">${sign}${v.toLocaleString()}억</span>`;
+      };
+      investorHTML = `
+        <div class="kpi-card__investors">
+          <div class="kpi-card__investor-row">
+            <span class="kpi-card__investor-label">외국인</span>${fmt(inv.foreign)}
+          </div>
+          <div class="kpi-card__investor-row">
+            <span class="kpi-card__investor-label">기관</span>${fmt(inv.institutional)}
+          </div>
+          <div class="kpi-card__investor-row">
+            <span class="kpi-card__investor-label">개인</span>${fmt(inv.individual)}
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  if (investorHTML) {
+    return `
+    <div class="kpi-card kpi-card--with-investors" id="kpi-${escapeHtml(ind.symbol)}" role="button" tabindex="0" data-symbol="${escapeHtml(ind.symbol)}" aria-label="${ind.name} ${formatValue(d.current, ind.unit)} ${ind.unit}, 클릭하면 차트로 이동">
+      <div class="kpi-card__main">
+        <div class="kpi-card__label">
+          ${escapeHtml(ind.name)}
+          <small style="color:#475569;font-size:0.7rem;">(${ind.unit})</small>
+        </div>
+        <div class="kpi-card__value">${formatValue(d.current, ind.unit)}</div>
+        ${lastDateHTML}
+        <div class="kpi-card__change ${cls}">${arrow}${changeAbs}${ind.unit} (${d.changePercent > 0 ? '+' : ''}${pct})</div>
+        <div class="kpi-card__source">출처: Yahoo Finance</div>
+      </div>
+      ${investorHTML}
+    </div>
+  `;
+  }
 
   return `
     <div class="kpi-card" id="kpi-${escapeHtml(ind.symbol)}" role="button" tabindex="0" data-symbol="${escapeHtml(ind.symbol)}" aria-label="${ind.name} ${formatValue(d.current, ind.unit)} ${ind.unit}, 클릭하면 차트로 이동">
@@ -1326,6 +1413,9 @@ async function fetchData() {
     const allData = {};
     let latestUpdatedAt = null;
 
+    // investor API도 병렬로 fetch
+    const investorFetchPromise = fetch('/api/investor').then(r => r.json()).catch(() => null);
+
     for (const [, group] of groups) {
       const { period, symbols } = group;
       const url = `/api/market?symbols=${encodeURIComponent(symbols.join(','))}&range=${period.range}&interval=${period.interval}`;
@@ -1334,6 +1424,12 @@ async function fetchData() {
       const json = await res.json();
       Object.assign(allData, json.data);
       latestUpdatedAt = json.updatedAt;
+    }
+
+    // investor 결과 반영
+    const inv = await investorFetchPromise;
+    if (inv && (inv.kospi || inv.kosdaq)) {
+      investorData = inv;
     }
 
     document.getElementById('error-banner').classList.add('hidden');
