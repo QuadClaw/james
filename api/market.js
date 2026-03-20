@@ -15,6 +15,11 @@ const SYMBOL_MAP = {
 
 const DEFAULT_SYMBOLS = Object.keys(SYMBOL_MAP);
 
+const NAVER_INDEX_MAP = {
+  '^KS11': 'KOSPI',
+  '^KQ11': 'KOSDAQ',
+};
+
 async function fetchRawYahoo(symbol, range, interval) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`;
   const response = await fetch(url, {
@@ -113,6 +118,30 @@ async function fetchSymbol(symbol, range, interval) {
   } catch (e) {
     // fallback to meta
     previousClose = meta.chartPreviousClose ?? meta.previousClose ?? null;
+  }
+
+  // NAVER 보조: 코스피/코스닥은 Yahoo 5d 데이터가 부정확할 수 있으므로 NAVER로 보정
+  const naverIndex = NAVER_INDEX_MAP[symbol];
+  if (naverIndex) {
+    try {
+      const naverRes = await fetch(`https://m.stock.naver.com/api/index/${naverIndex}/basic`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+      if (naverRes.ok) {
+        const naver = await naverRes.json();
+        const naverCurrent = parseFloat(naver.closePrice.replace(/,/g, ''));
+        const naverChange = parseFloat(naver.compareToPreviousClosePrice.replace(/,/g, ''));
+        const naverPrevClose = naverCurrent - naverChange;
+
+        // NAVER 데이터가 유효하면 previousClose를 덮어씀
+        if (!isNaN(naverPrevClose) && naverPrevClose > 0) {
+          previousClose = parseFloat(naverPrevClose.toFixed(4));
+          // previousCloseDate는 기존 Yahoo 기반 값 유지
+        }
+      }
+    } catch (e) {
+      // NAVER 실패 시 기존 Yahoo 기반 값 유지
+    }
   }
 
   // lastMarketDate: regularMarketTime 자체의 날짜 (가장 최근 거래일)
