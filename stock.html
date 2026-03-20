@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0f172a">
+  <script>
+    // FOUC 방지: 페이지 렌더링 전에 스킨 적용
+    (function() {
+      var skin = localStorage.getItem('stock-skin') || 'black';
+      if (skin === 'white') document.documentElement.setAttribute('data-skin', 'white');
+    })();
+  </script>
   <title>주식투자 - JamesClaw</title>
   <link rel="icon" type="image/png" href="https://openclaw.ai/apple-touch-icon.png">
   <link rel="apple-touch-icon" href="https://openclaw.ai/apple-touch-icon.png">
@@ -35,6 +42,37 @@
       --c3: #a78bfa;
       --c4: #fb923c;
     }
+
+    /* ===== White Skin ===== */
+    html[data-skin="white"] {
+      --bg-page:   #f8fafc;
+      --bg-card:   #ffffff;
+      --bg-header: #f1f5f9;
+      --border:    #e2e8f0;
+      --text:      #0f172a;
+      --text-muted:#64748b;
+      --positive:  #ea580c;
+      --negative:  #0284c7;
+      --neutral:   #64748b;
+      --accent:    #0284c7;
+    }
+
+    /* White skin: additional overrides for elements with hardcoded dark colors */
+    html[data-skin="white"] .tab-bar { background: #e2e8f0; }
+    html[data-skin="white"] .btn-refresh { background: #0284c7; color: #ffffff; border-color: #0284c744; }
+    html[data-skin="white"] .btn-refresh:hover { background: #0369a1; }
+    html[data-skin="white"] .btn-home { background: rgba(0,0,0,0.05); color: var(--text-muted); border-color: rgba(0,0,0,0.12); }
+    html[data-skin="white"] .btn-home:hover { background: rgba(0,0,0,0.10); color: var(--text); border-color: rgba(0,0,0,0.22); }
+    html[data-skin="white"] .skel-line { background: #cbd5e1; }
+    html[data-skin="white"] .chart-skel-bar { background: #cbd5e1; }
+    html[data-skin="white"] .skeleton::after,
+    html[data-skin="white"] .chart-skeleton::after { background: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.04) 50%, transparent 100%); }
+    html[data-skin="white"] .btn-chart-period:hover:not([aria-pressed="true"]) { background: #e2e8f0; color: var(--text); }
+    html[data-skin="white"] .search-result-item:hover { background: rgba(0,0,0,0.04); }
+    html[data-skin="white"] .error-banner { background: #fff1f2; border-color: #fca5a5; }
+    html[data-skin="white"] .error-banner p { color: #dc2626; }
+    html[data-skin="white"] .btn-retry { background: #fca5a5; color: #7f1d1d; border-color: #dc2626; }
+    html[data-skin="white"] .btn-retry:hover { background: #fecaca; }
 
     html { scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
 
@@ -78,7 +116,7 @@
       flex-wrap: wrap;
       gap: 12px;
       padding: 1.25rem var(--gap);
-      background: #0d1829;
+      background: var(--bg-header);
       border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
@@ -134,6 +172,25 @@
     .btn-refresh:active { transform: scale(0.97); }
     .btn-refresh:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ===== Skin Toggle Button ===== */
+    .btn-skin {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 200ms;
+      min-height: 36px;
+      white-space: nowrap;
+    }
+    .btn-skin:hover { background: var(--border); }
+    .btn-skin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
     /* ===== Home Button ===== */
     .btn-home {
@@ -427,7 +484,7 @@
     .chart-card__title {
       font-size: 0.95rem;
       font-weight: 600;
-      color: #e2e8f0;
+      color: var(--text);
       display: flex;
       align-items: center;
       gap: 0.4rem;
@@ -448,7 +505,7 @@
     .chart-card__current {
       font-size: 1.1rem;
       font-weight: 700;
-      color: #f1f5f9;
+      color: var(--text);
     }
     .chart-card__change {
       font-size: 0.85rem;
@@ -478,7 +535,7 @@
       flex-wrap: wrap;
     }
 
-    .stat-current { color: #f8fafc; }
+    .stat-current { color: var(--text); }
     .stat-high    { color: #f97316; }
     .stat-low     { color: #38bdf8; }
 
@@ -486,7 +543,7 @@
     .chart-period-toggle {
       display: flex;
       gap: 2px;
-      background: #0f172a;
+      background: var(--bg-page);
       border: 1px solid var(--border);
       border-radius: 6px;
       padding: 2px;
@@ -617,7 +674,7 @@
     .tab-bar {
       display: flex;
       gap: 0;
-      background: #131c2e;
+      background: var(--bg-header);
       border-bottom: 1px solid var(--border);
       position: sticky;
       top: var(--header-height, 70px);
@@ -758,6 +815,7 @@
     </a>
     <span id="last-updated" aria-live="polite" aria-atomic="true">—</span>
     <span id="auto-refresh-label" aria-hidden="true">· 30초 자동 갱신</span>
+    <button class="btn-skin" id="btn-skin" aria-label="스킨 변경"><span id="skin-icon">🌙</span> <span id="skin-label">Black</span></button>
     <button id="btn-refresh" class="btn-refresh" aria-label="데이터 새로고침">
       <span id="refresh-icon">⟳</span>
       <span>새로고침</span>
@@ -848,6 +906,8 @@ const PERIOD_OPTIONS = [
 let charts = {};               // symbol → Chart instance
 let stockCharts = {};          // symbol → Chart instance (개별종목)
 let autoRefreshTimer = null;
+let lastIndicatorData = null;  // 마지막으로 렌더링한 주요정보 데이터
+let lastStocksData    = null;  // 마지막으로 렌더링한 개별종목 데이터
 let isLoading = false;
 let isStocksLoading = false;
 let investorData = null;       // 투자자별 매매동향 (코스피/코스닥)
@@ -1138,6 +1198,7 @@ function buildChartCardHTML(ind, i, history, lastTradeDate, changePercent, curre
 
 /** Render full charts grid */
 function renderCharts(data) {
+  lastIndicatorData = data;
   const grid = document.getElementById('charts-grid');
 
   // Destroy old chart instances
@@ -1160,6 +1221,28 @@ function renderCharts(data) {
 
   // Attach per-chart period button listeners
   attachChartPeriodListeners();
+}
+
+// ─────────────────────────────────────────────
+//  Chart Theme (skin-aware)
+// ─────────────────────────────────────────────
+function getChartTheme() {
+  const isWhite = document.documentElement.getAttribute('data-skin') === 'white';
+  return {
+    gridColor:     isWhite ? '#e2e8f0' : '#1e293b',
+    tickColor:     '#64748b',
+    tooltipBg:     isWhite ? '#ffffff' : '#1e293b',
+    tooltipBorder: isWhite ? '#e2e8f0' : '#334155',
+    tooltipTitle:  isWhite ? '#64748b' : '#94a3b8',
+    tooltipBody:   isWhite ? '#0f172a' : '#f8fafc',
+    prevCloseLine: '#94a3b8',
+  };
+}
+
+function getCardBg(range) {
+  const isWhite = document.documentElement.getAttribute('data-skin') === 'white';
+  if (isWhite) return range === '1d' ? '#ffffff' : '#f0f4ff';
+  return range === '1d' ? '#1e293b' : '#2d1b4e';
 }
 
 /** Draw (or redraw) a single chart */
@@ -1219,7 +1302,7 @@ function drawChart(ind, i, history, changePercent, previousClose) {
       ctx.save();
       ctx.beginPath();
       ctx.setLineDash([]);
-      ctx.strokeStyle = '#94a3b8';
+      ctx.strokeStyle = getChartTheme().prevCloseLine;
       ctx.lineWidth = 1;
       ctx.moveTo(chart.chartArea.left, y);
       ctx.lineTo(chart.chartArea.right, y);
@@ -1253,11 +1336,11 @@ function drawChart(ind, i, history, changePercent, previousClose) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#1e293b',
-          borderColor: '#334155',
+          backgroundColor: getChartTheme().tooltipBg,
+          borderColor: getChartTheme().tooltipBorder,
           borderWidth: 1,
-          titleColor: '#94a3b8',
-          bodyColor: '#f8fafc',
+          titleColor: getChartTheme().tooltipTitle,
+          bodyColor: getChartTheme().tooltipBody,
           callbacks: {
             label: ctx => ` ${formatValue(ctx.parsed.y, ind.unit)} ${ind.unit}`,
           }
@@ -1265,17 +1348,17 @@ function drawChart(ind, i, history, changePercent, previousClose) {
       },
       scales: {
         x: {
-          grid: { color: '#1e293b' },
+          grid: { color: getChartTheme().gridColor },
           ticks: {
-            color: '#64748b',
+            color: getChartTheme().tickColor,
             maxTicksLimit: 6,
             font: { size: 11 },
           }
         },
         y: {
-          grid: { color: '#1e293b' },
+          grid: { color: getChartTheme().gridColor },
           ticks: {
-            color: '#64748b',
+            color: getChartTheme().tickColor,
             font: { size: 11 },
             callback: v => Math.round(v).toLocaleString('ko-KR'),
           }
@@ -1293,7 +1376,7 @@ function updateSingleChartCard(ind, i, history, lastTradeDate, changePercent, cu
   if (!card) return;
 
   // Update background color based on period
-  card.style.setProperty('background', period.range === '1d' ? '#1e293b' : '#2d1b4e', 'important');
+  card.style.setProperty('background', getCardBg(period.range), 'important');
 
   // Build title with optional date suffix for 1d
   const dateSuffix  = period.range === '1d' ? formatLastTradeDateSuffix(lastTradeDate) : '';
@@ -1385,7 +1468,7 @@ async function fetchSingleChart(ind, idx) {
   const card = document.getElementById(`chart-${ind.symbol}`);
   if (card) {
     // Update background color optimistically
-    card.style.setProperty('background', period.range === '1d' ? '#1e293b' : '#2d1b4e', 'important');
+    card.style.setProperty('background', getCardBg(period.range), 'important');
     card.querySelectorAll('.btn-chart-period').forEach(btn => {
       btn.setAttribute('aria-pressed', String(btn.dataset.range === period.range));
       btn.disabled = true;
@@ -1617,7 +1700,7 @@ function drawStocksChart(ind, i, history, changePercent, previousClose) {
       ctx.save();
       ctx.beginPath();
       ctx.setLineDash([]);
-      ctx.strokeStyle = '#94a3b8';
+      ctx.strokeStyle = getChartTheme().prevCloseLine;
       ctx.lineWidth = 1;
       ctx.moveTo(chart.chartArea.left, y);
       ctx.lineTo(chart.chartArea.right, y);
@@ -1651,11 +1734,11 @@ function drawStocksChart(ind, i, history, changePercent, previousClose) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#1e293b',
-          borderColor: '#334155',
+          backgroundColor: getChartTheme().tooltipBg,
+          borderColor: getChartTheme().tooltipBorder,
           borderWidth: 1,
-          titleColor: '#94a3b8',
-          bodyColor: '#f8fafc',
+          titleColor: getChartTheme().tooltipTitle,
+          bodyColor: getChartTheme().tooltipBody,
           callbacks: {
             label: ctx => ` ${formatValue(ctx.parsed.y, ind.unit)} ${ind.unit}`,
           }
@@ -1663,12 +1746,12 @@ function drawStocksChart(ind, i, history, changePercent, previousClose) {
       },
       scales: {
         x: {
-          grid: { color: '#1e293b' },
-          ticks: { color: '#64748b', maxTicksLimit: 6, font: { size: 11 } }
+          grid: { color: getChartTheme().gridColor },
+          ticks: { color: getChartTheme().tickColor, maxTicksLimit: 6, font: { size: 11 } }
         },
         y: {
-          grid: { color: '#1e293b' },
-          ticks: { color: '#64748b', font: { size: 11 }, callback: v => Math.round(v).toLocaleString('ko-KR') }
+          grid: { color: getChartTheme().gridColor },
+          ticks: { color: getChartTheme().tickColor, font: { size: 11 }, callback: v => Math.round(v).toLocaleString('ko-KR') }
         }
       }
     },
@@ -1680,6 +1763,7 @@ function drawStocksChart(ind, i, history, changePercent, previousClose) {
 //  개별종목 — Render Charts Grid
 // ─────────────────────────────────────────────
 function renderStocksCharts(data) {
+  lastStocksData = data;
   const grid = document.getElementById('stocks-charts-grid');
   Object.values(stockCharts).forEach(c => c.destroy());
   stockCharts = {};
@@ -1704,7 +1788,7 @@ function updateSingleStocksChartCard(ind, i, history, lastTradeDate, changePerce
   const card   = document.getElementById(`chart-${ind.symbol}`);
   if (!card) return;
 
-  card.style.setProperty('background', period.range === '1d' ? '#1e293b' : '#2d1b4e', 'important');
+  card.style.setProperty('background', getCardBg(period.range), 'important');
 
   const dateSuffix = period.range === '1d' ? formatLastTradeDateSuffix(lastTradeDate) : '';
   const titleLabel = dateSuffix ? escapeHtml(dateSuffix) : '';
@@ -1779,7 +1863,7 @@ async function fetchSingleStocksChart(ind, idx) {
 
   const card = document.getElementById(`chart-${ind.symbol}`);
   if (card) {
-    card.style.setProperty('background', period.range === '1d' ? '#1e293b' : '#2d1b4e', 'important');
+    card.style.setProperty('background', getCardBg(period.range), 'important');
     card.querySelectorAll('.btn-stocks-period').forEach(btn => {
       btn.setAttribute('aria-pressed', String(btn.dataset.range === period.range));
       btn.disabled = true;
@@ -2164,6 +2248,50 @@ function escapeHtml(str) {
 }
 
 // ─────────────────────────────────────────────
+//  Skin Management
+// ─────────────────────────────────────────────
+function applySkin(skin) {
+  if (skin === 'white') {
+    document.documentElement.setAttribute('data-skin', 'white');
+  } else {
+    document.documentElement.removeAttribute('data-skin');
+  }
+  const icon  = document.getElementById('skin-icon');
+  const label = document.getElementById('skin-label');
+  if (icon && label) {
+    icon.textContent  = skin === 'white' ? '☀️' : '🌙';
+    label.textContent = skin === 'white' ? 'White' : 'Black';
+  }
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) {
+    meta.setAttribute('content', skin === 'white' ? '#f1f5f9' : '#0f172a');
+  }
+  localStorage.setItem('stock-skin', skin);
+}
+
+function initSkin() {
+  const saved = localStorage.getItem('stock-skin') || 'black';
+  applySkin(saved);
+}
+
+function refreshAllCharts() {
+  if (activeTab === 'main') {
+    if (lastIndicatorData) renderCharts(lastIndicatorData);
+  } else {
+    if (lastStocksData) renderStocksCharts(lastStocksData);
+  }
+}
+
+function toggleSkin() {
+  const current = localStorage.getItem('stock-skin') || 'black';
+  const next    = current === 'black' ? 'white' : 'black';
+  applySkin(next);
+  refreshAllCharts();
+}
+
+document.getElementById('btn-skin').addEventListener('click', toggleSkin);
+
+// ─────────────────────────────────────────────
 //  Init
 // ─────────────────────────────────────────────
 // ─────────────────────────────────────────────
@@ -2183,6 +2311,7 @@ updateScrollMargin();
 renderSkeletons();
 fetchData();
 startAutoRefresh();
+initSkin();
 </script>
 </body>
 </html>
