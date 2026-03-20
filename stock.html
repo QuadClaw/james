@@ -1907,6 +1907,8 @@ document.getElementById('kpi-grid').addEventListener('click', e => {
 document.getElementById('charts-grid').addEventListener('click', e => {
   // 기간 토글 버튼 클릭은 스크롤 동작 안 함
   if (e.target.closest('.btn-chart-period')) return;
+  // 차트 캔버스 영역 클릭은 툴팁 표시용이므로 스크롤 안 함
+  if (e.target.tagName === 'CANVAS' || e.target.closest('.chart-canvas-wrapper')) return;
   const chartCard = e.target.closest('.chart-card');
   if (!chartCard) return;
   const symbol = chartCard.id.replace('chart-', '');
