@@ -978,6 +978,8 @@ function renderKPICard(ind, d) {
   const arrow = changeArrow(d.changePercent);
   const pct = d.changePercent != null ? `${Math.abs(d.changePercent).toFixed(2)}%` : '—';
   const changeAbs = d.change != null ? formatValue(Math.abs(d.change), ind.unit) : '—';
+  const isNaver = ind.symbol === '^KS11' || ind.symbol === '^KQ11' || ind.symbol.endsWith('.KS') || ind.symbol.endsWith('.KQ');
+  const sourceLabel = isNaver ? '출처: NAVER Finance' : '출처: Yahoo Finance';
   const lastDateLabel = d.lastMarketDate ? formatLastMarketDateLabel(d.lastMarketDate) : null;
   const lastDateHTML = lastDateLabel
     ? `<div class="kpi-card__date">${escapeHtml(lastDateLabel)}</div>`
@@ -1021,7 +1023,7 @@ function renderKPICard(ind, d) {
         <div class="kpi-card__value">${formatValue(d.current, ind.unit)}</div>
         ${lastDateHTML}
         <div class="kpi-card__change ${cls}">${arrow}${changeAbs}${ind.unit} (${d.changePercent > 0 ? '+' : ''}${pct})</div>
-        <div class="kpi-card__source">출처: Yahoo Finance</div>
+        <div class="kpi-card__source">${sourceLabel}</div>
       </div>
       ${investorHTML}
     </div>
@@ -1037,7 +1039,7 @@ function renderKPICard(ind, d) {
       <div class="kpi-card__value">${formatValue(d.current, ind.unit)}</div>
       ${lastDateHTML}
       <div class="kpi-card__change ${cls}">${arrow}${changeAbs}${ind.unit} (${d.changePercent > 0 ? '+' : ''}${pct})</div>
-      <div class="kpi-card__source">출처: Yahoo Finance</div>
+      <div class="kpi-card__source">${sourceLabel}</div>
     </div>
   `;
 }
@@ -1050,7 +1052,7 @@ function renderKPIError(ind, msg) {
       </div>
       <div class="kpi-card__value" style="font-size:1.4rem;color:var(--text-muted)">—</div>
       <div class="kpi-card__error">⚠ ${escapeHtml(msg)}</div>
-      <div class="kpi-card__source">출처: Yahoo Finance</div>
+      <div class="kpi-card__source">${sourceLabel}</div>
     </div>
   `;
 }
