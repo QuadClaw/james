@@ -1155,7 +1155,7 @@ function renderCharts(data) {
   INDICATORS.forEach((ind, i) => {
     const d = data[ind.symbol];
     const history = d?.history || [];
-    drawChart(ind, i, history, d?.changePercent);
+    drawChart(ind, i, history, d?.changePercent, d?.previousClose);
   });
 
   // Attach per-chart period button listeners
@@ -1163,7 +1163,7 @@ function renderCharts(data) {
 }
 
 /** Draw (or redraw) a single chart */
-function drawChart(ind, i, history, changePercent) {
+function drawChart(ind, i, history, changePercent, previousClose) {
   const period  = chartPeriods[ind.symbol];
   const wrapper = document.getElementById(`chart-canvas-${i}`);
   const canvas  = document.getElementById(`chart-${i}`);
@@ -1208,6 +1208,29 @@ function drawChart(ind, i, history, changePercent) {
   const gradient = ctx.createLinearGradient(0, 0, 0, 220);
   gradient.addColorStop(0, color + '33');
   gradient.addColorStop(1, color + '00');
+
+  const prevClosePlugin = previousClose != null ? {
+    id: 'prevCloseLine',
+    afterDraw(chart) {
+      const yScale = chart.scales.y;
+      const y = yScale.getPixelForValue(previousClose);
+      if (y < yScale.top || y > yScale.bottom) return;
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.beginPath();
+      ctx.setLineDash([6, 4]);
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1;
+      ctx.moveTo(chart.chartArea.left, y);
+      ctx.lineTo(chart.chartArea.right, y);
+      ctx.stroke();
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('전일종가', chart.chartArea.right - 2, y - 4);
+      ctx.restore();
+    }
+  } : null;
 
   charts[ind.symbol] = new Chart(ctx, {
     type: 'line',
@@ -1262,12 +1285,13 @@ function drawChart(ind, i, history, changePercent) {
           }
         }
       }
-    }
+    },
+    plugins: prevClosePlugin ? [prevClosePlugin] : [],
   });
 }
 
 /** Update one chart card after a period change */
-function updateSingleChartCard(ind, i, history, lastTradeDate, changePercent, current, change) {
+function updateSingleChartCard(ind, i, history, lastTradeDate, changePercent, current, change, previousClose) {
   const period = chartPeriods[ind.symbol];
   const card   = document.getElementById(`chart-${ind.symbol}`);
   if (!card) return;
@@ -1322,7 +1346,7 @@ function updateSingleChartCard(ind, i, history, lastTradeDate, changePercent, cu
   }
 
   // Redraw
-  drawChart(ind, i, history, changePercent);
+  drawChart(ind, i, history, changePercent, previousClose);
 }
 
 // ─────────────────────────────────────────────
@@ -1377,7 +1401,7 @@ async function fetchSingleChart(ind, idx) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     const d    = json.data?.[ind.symbol];
-    updateSingleChartCard(ind, idx, d?.history || [], d?.lastTradeDate || null, d?.changePercent, d?.current, d?.change);
+    updateSingleChartCard(ind, idx, d?.history || [], d?.lastTradeDate || null, d?.changePercent, d?.current, d?.change, d?.previousClose);
   } catch (err) {
     console.error(`fetchSingleChart error [${ind.symbol}]:`, err);
     // Restore buttons on error
@@ -1550,7 +1574,7 @@ function buildStocksChartCardHTML(ind, i, history, lastTradeDate, changePercent,
 // ─────────────────────────────────────────────
 //  개별종목 — Draw Chart
 // ─────────────────────────────────────────────
-function drawStocksChart(ind, i, history, changePercent) {
+function drawStocksChart(ind, i, history, changePercent, previousClose) {
   const period  = stockChartPeriods[ind.symbol];
   const wrapper = document.getElementById(`schart-canvas-${i}`);
   const canvas  = document.getElementById(`schart-${i}`);
@@ -1586,6 +1610,29 @@ function drawStocksChart(ind, i, history, changePercent) {
   const gradient = ctx.createLinearGradient(0, 0, 0, 220);
   gradient.addColorStop(0, color + '33');
   gradient.addColorStop(1, color + '00');
+
+  const prevClosePlugin = previousClose != null ? {
+    id: 'prevCloseLine',
+    afterDraw(chart) {
+      const yScale = chart.scales.y;
+      const y = yScale.getPixelForValue(previousClose);
+      if (y < yScale.top || y > yScale.bottom) return;
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.beginPath();
+      ctx.setLineDash([6, 4]);
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1;
+      ctx.moveTo(chart.chartArea.left, y);
+      ctx.lineTo(chart.chartArea.right, y);
+      ctx.stroke();
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('전일종가', chart.chartArea.right - 2, y - 4);
+      ctx.restore();
+    }
+  } : null;
 
   stockCharts[ind.symbol] = new Chart(ctx, {
     type: 'line',
@@ -1632,7 +1679,8 @@ function drawStocksChart(ind, i, history, changePercent) {
           ticks: { color: '#64748b', font: { size: 11 }, callback: v => Math.round(v).toLocaleString('ko-KR') }
         }
       }
-    }
+    },
+    plugins: prevClosePlugin ? [prevClosePlugin] : [],
   });
 }
 
@@ -1650,7 +1698,7 @@ function renderStocksCharts(data) {
   }).join('');
 
   STOCKS.forEach((ind, i) => {
-    drawStocksChart(ind, i, data[ind.symbol]?.history || [], data[ind.symbol]?.changePercent);
+    drawStocksChart(ind, i, data[ind.symbol]?.history || [], data[ind.symbol]?.changePercent, data[ind.symbol]?.previousClose);
   });
 
   attachStocksChartPeriodListeners();
@@ -1659,7 +1707,7 @@ function renderStocksCharts(data) {
 // ─────────────────────────────────────────────
 //  개별종목 — Update Single Chart Card (period change)
 // ─────────────────────────────────────────────
-function updateSingleStocksChartCard(ind, i, history, lastTradeDate, changePercent, current, change) {
+function updateSingleStocksChartCard(ind, i, history, lastTradeDate, changePercent, current, change, previousClose) {
   const period = stockChartPeriods[ind.symbol];
   const card   = document.getElementById(`chart-${ind.symbol}`);
   if (!card) return;
@@ -1705,7 +1753,7 @@ function updateSingleStocksChartCard(ind, i, history, lastTradeDate, changePerce
     wrapper.innerHTML = `<canvas id="schart-${i}" aria-label="${escapeHtml(ind.name)} 차트" role="img"></canvas>`;
   }
 
-  drawStocksChart(ind, i, history, changePercent);
+  drawStocksChart(ind, i, history, changePercent, previousClose);
 }
 
 // ─────────────────────────────────────────────
@@ -1751,7 +1799,7 @@ async function fetchSingleStocksChart(ind, idx) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     const d    = json.data?.[ind.symbol];
-    updateSingleStocksChartCard(ind, idx, d?.history || [], d?.lastTradeDate || null, d?.changePercent, d?.current, d?.change);
+    updateSingleStocksChartCard(ind, idx, d?.history || [], d?.lastTradeDate || null, d?.changePercent, d?.current, d?.change, d?.previousClose);
   } catch (err) {
     console.error(`fetchSingleStocksChart error [${ind.symbol}]:`, err);
   } finally {
