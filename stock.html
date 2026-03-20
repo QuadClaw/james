@@ -982,6 +982,51 @@
       color: var(--text);
     }
 
+    /* ===== Trade Portfolio ===== */
+    .trade-portfolio-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+    }
+    .portfolio-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .portfolio-item__left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .portfolio-item__name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    .portfolio-item__detail {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .portfolio-item__right {
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .portfolio-item__value {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    .portfolio-item__qty {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
     /* Trade Mobile */
     @media (max-width: 600px) {
       .trade-form__row {
@@ -1094,9 +1139,11 @@
           </div>
         </div>
         <div class="trade-form__row">
-          <div class="trade-form__field">
+          <div class="trade-form__field" style="position:relative;">
             <label for="trade-stock">종목명</label>
-            <input type="text" id="trade-stock" placeholder="예: 삼성전자" required>
+            <input type="text" id="trade-stock" placeholder="예: 삼성전자" autocomplete="off" required>
+            <input type="hidden" id="trade-symbol" value="">
+            <div id="trade-search-results" class="search-results" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:100;"></div>
           </div>
           <div class="trade-form__field">
             <label for="trade-price">단가 (원)</label>
@@ -1114,7 +1161,25 @@
           </div>
         </div>
         <div class="trade-form__row">
-          <div class="trade-form__field trade-form__field--full">
+          <div class="trade-form__field">
+            <label for="trade-broker">증권사</label>
+            <select id="trade-broker">
+              <option value="">선택</option>
+              <option value="키움증권">키움증권</option>
+              <option value="삼성증권">삼성증권</option>
+              <option value="미래에셋증권">미래에셋증권</option>
+              <option value="NH투자증권">NH투자증권</option>
+              <option value="한국투자증권">한국투자증권</option>
+              <option value="KB증권">KB증권</option>
+              <option value="신한투자증권">신한투자증권</option>
+              <option value="대신증권">대신증권</option>
+              <option value="하나증권">하나증권</option>
+              <option value="토스증권">토스증권</option>
+              <option value="카카오페이증권">카카오페이증권</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+          <div class="trade-form__field">
             <label for="trade-memo">메모</label>
             <input type="text" id="trade-memo" placeholder="선택사항">
           </div>
@@ -1143,6 +1208,12 @@
       <div id="trade-list" class="trade-list">
         <p class="trade-list__empty">거래내역이 없습니다.</p>
       </div>
+    </section>
+
+    <!-- 포트폴리오 (보유종목) -->
+    <section class="trade-portfolio-section" id="trade-portfolio" style="display:none;">
+      <p class="section-label">보유종목</p>
+      <div id="trade-portfolio-grid" class="trade-portfolio-grid"></div>
     </section>
 
     <!-- 요약 -->
@@ -2626,6 +2697,7 @@ function renderTrades() {
     const typeLabel = t.type === 'buy' ? '매수' : '매도';
     const amount = (t.price * t.qty).toLocaleString('ko-KR');
     const feeStr = t.fee ? ` · 수수료 ${t.fee.toLocaleString('ko-KR')}원` : '';
+    const brokerStr = t.broker ? ` · ${escapeHtml(t.broker)}` : '';
     const memoStr = t.memo ? ` · ${escapeHtml(t.memo)}` : '';
 
     return `
@@ -2636,7 +2708,7 @@ function renderTrades() {
             <span class="trade-item__stock">${escapeHtml(t.stock)}</span>
           </div>
           <div class="trade-item__detail">
-            ${dateStr} ${timeStr} · ${t.price.toLocaleString('ko-KR')}원 × ${t.qty.toLocaleString('ko-KR')}주${feeStr}${memoStr}
+            ${dateStr} ${timeStr} · ${t.price.toLocaleString('ko-KR')}원 × ${t.qty.toLocaleString('ko-KR')}주${feeStr}${brokerStr}${memoStr}
           </div>
         </div>
         <div class="trade-item__right">
@@ -2651,6 +2723,7 @@ function renderTrades() {
 
   // 요약 표시
   renderTradeSummary(trades);
+  renderPortfolio(trades);
 }
 
 function renderTradeSummary(trades) {
@@ -2664,6 +2737,10 @@ function renderTradeSummary(trades) {
   const totalSell = trades.filter(t => t.type === 'sell').reduce((s, t) => s + t.price * t.qty, 0);
   const totalFee = trades.reduce((s, t) => s + (t.fee || 0), 0);
   const totalTrades = trades.length;
+
+  const holdings = calculatePortfolio(trades);
+  const totalInvested = holdings.reduce((s, h) => s + h.investedAmount, 0);
+  const holdingCount = holdings.length;
 
   document.getElementById('trade-summary-grid').innerHTML = `
     <div class="trade-summary-card">
@@ -2682,8 +2759,174 @@ function renderTradeSummary(trades) {
       <div class="trade-summary-card__label">총 거래건수</div>
       <div class="trade-summary-card__value">${totalTrades}건</div>
     </div>
+    <div class="trade-summary-card">
+      <div class="trade-summary-card__label">총 투자금액 (보유)</div>
+      <div class="trade-summary-card__value">${totalInvested.toLocaleString('ko-KR')}원</div>
+    </div>
+    <div class="trade-summary-card">
+      <div class="trade-summary-card__label">보유종목</div>
+      <div class="trade-summary-card__value">${holdingCount}종목</div>
+    </div>
   `;
 }
+
+// ─────────────────────────────────────────────
+//  거래내역 — Portfolio Calculation
+// ─────────────────────────────────────────────
+function calculatePortfolio(trades) {
+  const portfolio = {};
+
+  for (const t of trades) {
+    if (!portfolio[t.stock]) {
+      portfolio[t.stock] = {
+        totalBuyQty: 0, totalBuyAmount: 0,
+        totalSellQty: 0, totalSellAmount: 0,
+        totalFee: 0, symbol: t.symbol || '', brokers: new Set()
+      };
+    }
+    const p = portfolio[t.stock];
+    if (t.type === 'buy') {
+      p.totalBuyQty += t.qty;
+      p.totalBuyAmount += t.price * t.qty;
+    } else {
+      p.totalSellQty += t.qty;
+      p.totalSellAmount += t.price * t.qty;
+    }
+    p.totalFee += (t.fee || 0);
+    if (t.broker) p.brokers.add(t.broker);
+  }
+
+  const holdings = [];
+  for (const [name, p] of Object.entries(portfolio)) {
+    const holdingQty = p.totalBuyQty - p.totalSellQty;
+    if (holdingQty > 0) {
+      const avgPrice = Math.round(p.totalBuyAmount / p.totalBuyQty);
+      const investedAmount = avgPrice * holdingQty;
+      const realizedPL = p.totalSellAmount - (p.totalBuyAmount / p.totalBuyQty * p.totalSellQty) - p.totalFee;
+      holdings.push({
+        name,
+        symbol: p.symbol,
+        holdingQty,
+        avgPrice,
+        investedAmount,
+        totalFee: p.totalFee,
+        brokers: [...p.brokers],
+        realizedPL: Math.round(p.totalSellQty > 0 ? realizedPL : 0),
+      });
+    }
+  }
+  return holdings;
+}
+
+function renderPortfolio(trades) {
+  const holdings = calculatePortfolio(trades);
+  const section = document.getElementById('trade-portfolio');
+  const grid = document.getElementById('trade-portfolio-grid');
+
+  if (holdings.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = '';
+  grid.innerHTML = holdings.map(h => {
+    const brokerStr = h.brokers.length > 0 ? h.brokers.join(', ') : '';
+    const brokerHtml = brokerStr ? ` · ${escapeHtml(brokerStr)}` : '';
+    return `
+      <div class="portfolio-item">
+        <div class="portfolio-item__left">
+          <div class="portfolio-item__name">${escapeHtml(h.name)}</div>
+          <div class="portfolio-item__detail">
+            평단 ${h.avgPrice.toLocaleString('ko-KR')}원${brokerHtml}
+          </div>
+        </div>
+        <div class="portfolio-item__right">
+          <div class="portfolio-item__value">${h.investedAmount.toLocaleString('ko-KR')}원</div>
+          <div class="portfolio-item__qty">${h.holdingQty.toLocaleString('ko-KR')}주 보유</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+//  거래내역 — Trade Stock Autocomplete
+// ─────────────────────────────────────────────
+let _tradeSearchTimer = null;
+document.getElementById('trade-stock').addEventListener('input', e => {
+  clearTimeout(_tradeSearchTimer);
+  const q = e.target.value.trim();
+  document.getElementById('trade-symbol').value = '';
+  if (q.length >= 1) {
+    _tradeSearchTimer = setTimeout(() => searchTradeStock(q), 300);
+  } else {
+    document.getElementById('trade-search-results').style.display = 'none';
+  }
+});
+
+async function searchTradeStock(query) {
+  const q = query.trim();
+  const resultsEl = document.getElementById('trade-search-results');
+  if (!q) { resultsEl.style.display = 'none'; return; }
+
+  resultsEl.style.display = 'block';
+  resultsEl.innerHTML = '<div style="padding:0.5rem;color:var(--text-muted);font-size:0.85rem;">검색 중...</div>';
+
+  const isKorean = /[가-힣]/.test(q);
+  let results = [];
+  try {
+    if (isKorean) {
+      const res = await fetch(`/api/kr-search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      results = data.results || [];
+    } else {
+      const [yahooRes, krxRes] = await Promise.allSettled([
+        fetch(`/api/search?q=${encodeURIComponent(q)}`).then(r => r.json()),
+        fetch(`/api/kr-search?q=${encodeURIComponent(q)}`).then(r => r.json()),
+      ]);
+      const seen = new Set();
+      const merged = [];
+      if (krxRes.status === 'fulfilled') {
+        for (const r of (krxRes.value.results || [])) {
+          if (!seen.has(r.symbol)) { seen.add(r.symbol); merged.push(r); }
+        }
+      }
+      if (yahooRes.status === 'fulfilled') {
+        for (const r of (yahooRes.value.results || [])) {
+          if (!seen.has(r.symbol)) { seen.add(r.symbol); merged.push(r); }
+        }
+      }
+      results = merged;
+    }
+  } catch (err) { console.error('Trade search error:', err); }
+
+  if (results.length === 0) {
+    resultsEl.innerHTML = '<div style="padding:0.5rem;color:var(--text-muted);font-size:0.85rem;">결과 없음</div>';
+    return;
+  }
+
+  resultsEl.innerHTML = results.slice(0, 10).map(r => `
+    <div class="search-result-item" data-symbol="${escapeHtml(r.symbol)}" data-name="${escapeHtml(r.name)}">
+      <strong>${escapeHtml(r.name)}</strong> <span style="color:var(--text-muted);font-size:0.8rem;">${escapeHtml(r.symbol)}</span>
+    </div>
+  `).join('');
+
+  resultsEl.querySelectorAll('.search-result-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.getElementById('trade-stock').value = item.dataset.name;
+      document.getElementById('trade-symbol').value = item.dataset.symbol;
+      resultsEl.style.display = 'none';
+    });
+  });
+}
+
+// 외부 클릭 시 trade 검색 결과 닫기
+document.addEventListener('click', e => {
+  if (!e.target.closest('#trade-stock') && !e.target.closest('#trade-search-results')) {
+    const el = document.getElementById('trade-search-results');
+    if (el) el.style.display = 'none';
+  }
+});
 
 // ─────────────────────────────────────────────
 //  거래내역 — Form Handlers
@@ -2717,9 +2960,11 @@ document.getElementById('trade-form').addEventListener('submit', e => {
     date: document.getElementById('trade-date').value,
     type: document.getElementById('trade-type').value,
     stock: document.getElementById('trade-stock').value.trim(),
+    symbol: document.getElementById('trade-symbol').value,
     price: parseInt(document.getElementById('trade-price').value.replace(/,/g, '')) || 0,
     qty: parseInt(document.getElementById('trade-qty').value.replace(/,/g, '')) || 0,
     fee: parseInt((document.getElementById('trade-fee').value || '0').replace(/,/g, '')) || 0,
+    broker: document.getElementById('trade-broker').value,
     memo: document.getElementById('trade-memo').value.trim(),
   };
 
