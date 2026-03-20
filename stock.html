@@ -1218,7 +1218,7 @@ function drawChart(ind, i, history, changePercent, previousClose) {
       const ctx = chart.ctx;
       ctx.save();
       ctx.beginPath();
-      ctx.setLineDash([6, 4]);
+      ctx.setLineDash([]);
       ctx.strokeStyle = '#94a3b8';
       ctx.lineWidth = 1;
       ctx.moveTo(chart.chartArea.left, y);
@@ -1620,7 +1620,7 @@ function drawStocksChart(ind, i, history, changePercent, previousClose) {
       const ctx = chart.ctx;
       ctx.save();
       ctx.beginPath();
-      ctx.setLineDash([6, 4]);
+      ctx.setLineDash([]);
       ctx.strokeStyle = '#94a3b8';
       ctx.lineWidth = 1;
       ctx.moveTo(chart.chartArea.left, y);
