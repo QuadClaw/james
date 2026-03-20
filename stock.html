@@ -798,6 +798,208 @@
         font-size: 1rem;
       }
     }
+
+    /* ===== Trade Form ===== */
+    .trade-form-section { margin-bottom: 2rem; }
+    .trade-form {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+    }
+    .trade-form__row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .trade-form__field {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .trade-form__field--full { flex: 1 1 100%; }
+    .trade-form__field label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .trade-form__field input,
+    .trade-form__field select {
+      background: var(--bg-page);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 16px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 200ms;
+    }
+    .trade-form__field input:focus,
+    .trade-form__field select:focus {
+      border-color: var(--accent);
+    }
+    .trade-form__field input::placeholder { color: var(--text-muted); opacity: 0.6; }
+    .trade-form__amount {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      padding: 4px 0;
+    }
+    .btn-trade-add {
+      width: 100%;
+      padding: 10px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 200ms;
+    }
+    .btn-trade-add:hover { opacity: 0.9; }
+    .btn-trade-add:active { transform: scale(0.98); }
+
+    /* ===== Trade List ===== */
+    .trade-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .trade-filter__select {
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .trade-list__empty {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 2rem 0;
+    }
+
+    .trade-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .trade-item__left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      min-width: 0;
+    }
+    .trade-item__top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .trade-item__badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .trade-item__badge--buy {
+      background: var(--positive);
+      color: #fff;
+    }
+    .trade-item__badge--sell {
+      background: var(--negative);
+      color: #fff;
+    }
+    .trade-item__stock {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .trade-item__detail {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .trade-item__right {
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .trade-item__amount {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    .trade-item__actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .btn-trade-delete {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      cursor: pointer;
+    }
+    .btn-trade-delete:hover { color: #ef4444; border-color: #ef4444; }
+
+    /* ===== Trade Summary ===== */
+    .trade-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .trade-summary-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+    }
+    .trade-summary-card__label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .trade-summary-card__value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Trade Mobile */
+    @media (max-width: 600px) {
+      .trade-form__row {
+        flex-direction: column;
+        gap: 8px;
+      }
+      .trade-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .trade-item__right {
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
@@ -827,6 +1029,7 @@
 <nav class="tab-bar" role="tablist" aria-label="데이터 카테고리">
   <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="panel-main" id="tab-main">📊 주요정보</button>
   <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-stocks" id="tab-stocks">📱 개별종목</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-trades" id="tab-trades">📝 거래내역</button>
 </nav>
 
 <!-- ===== Main ===== -->
@@ -871,6 +1074,83 @@
       <div class="charts-grid" id="stocks-charts-grid" aria-live="polite" aria-atomic="false"></div>
     </section>
   </div><!-- /panel-stocks -->
+
+  <div id="panel-trades" role="tabpanel" aria-labelledby="tab-trades" style="display:none;">
+    <!-- 거래 추가 폼 -->
+    <section class="trade-form-section">
+      <p class="section-label">거래 추가</p>
+      <form id="trade-form" class="trade-form">
+        <div class="trade-form__row">
+          <div class="trade-form__field">
+            <label for="trade-date">거래일시</label>
+            <input type="datetime-local" id="trade-date" required>
+          </div>
+          <div class="trade-form__field">
+            <label for="trade-type">매수/매도</label>
+            <select id="trade-type" required>
+              <option value="buy">매수</option>
+              <option value="sell">매도</option>
+            </select>
+          </div>
+        </div>
+        <div class="trade-form__row">
+          <div class="trade-form__field">
+            <label for="trade-stock">종목명</label>
+            <input type="text" id="trade-stock" placeholder="예: 삼성전자" required>
+          </div>
+          <div class="trade-form__field">
+            <label for="trade-price">단가 (원)</label>
+            <input type="text" id="trade-price" placeholder="0" inputmode="numeric" required>
+          </div>
+        </div>
+        <div class="trade-form__row">
+          <div class="trade-form__field">
+            <label for="trade-qty">수량</label>
+            <input type="text" id="trade-qty" placeholder="0" inputmode="numeric" required>
+          </div>
+          <div class="trade-form__field">
+            <label for="trade-fee">수수료 (원)</label>
+            <input type="text" id="trade-fee" placeholder="0" inputmode="numeric">
+          </div>
+        </div>
+        <div class="trade-form__row">
+          <div class="trade-form__field trade-form__field--full">
+            <label for="trade-memo">메모</label>
+            <input type="text" id="trade-memo" placeholder="선택사항">
+          </div>
+        </div>
+        <div class="trade-form__row">
+          <div class="trade-form__field trade-form__field--full">
+            <div class="trade-form__amount" id="trade-amount-preview">금액: ―</div>
+          </div>
+        </div>
+        <button type="submit" class="btn-trade-add">추가</button>
+      </form>
+    </section>
+
+    <!-- 거래내역 리스트 -->
+    <section class="trade-list-section">
+      <div class="trade-list-header">
+        <p class="section-label">거래내역 목록</p>
+        <div class="trade-filter">
+          <select id="trade-filter-type" class="trade-filter__select">
+            <option value="all">전체</option>
+            <option value="buy">매수</option>
+            <option value="sell">매도</option>
+          </select>
+        </div>
+      </div>
+      <div id="trade-list" class="trade-list">
+        <p class="trade-list__empty">거래내역이 없습니다.</p>
+      </div>
+    </section>
+
+    <!-- 요약 -->
+    <section class="trade-summary-section" id="trade-summary" style="display:none;">
+      <p class="section-label">거래 요약</p>
+      <div class="trade-summary-grid" id="trade-summary-grid"></div>
+    </section>
+  </div><!-- /panel-trades -->
 
 </main>
 
@@ -1935,9 +2215,10 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     btn.setAttribute('aria-selected', 'true');
 
-    const target = btn.id === 'tab-main' ? 'main' : 'stocks';
+    const target = btn.id === 'tab-main' ? 'main' : btn.id === 'tab-stocks' ? 'stocks' : 'trades';
     document.getElementById('panel-main').style.display   = target === 'main'   ? '' : 'none';
     document.getElementById('panel-stocks').style.display = target === 'stocks' ? '' : 'none';
+    document.getElementById('panel-trades').style.display = target === 'trades' ? '' : 'none';
     activeTab = target;
 
     if (target === 'stocks' && !stocksLoaded) {
@@ -2290,6 +2571,190 @@ function toggleSkin() {
 }
 
 document.getElementById('btn-skin').addEventListener('click', toggleSkin);
+
+// ─────────────────────────────────────────────
+//  거래내역 — Data Management
+// ─────────────────────────────────────────────
+function loadTrades() {
+  try {
+    return JSON.parse(localStorage.getItem('stock-trades') || '[]');
+  } catch { return []; }
+}
+
+function saveTrades(trades) {
+  localStorage.setItem('stock-trades', JSON.stringify(trades));
+}
+
+function addTrade(trade) {
+  const trades = loadTrades();
+  trade.id = Date.now().toString();
+  trade.createdAt = new Date().toISOString();
+  trade.amount = trade.price * trade.qty;
+  trades.unshift(trade); // 최신이 위
+  saveTrades(trades);
+  renderTrades();
+}
+
+function deleteTrade(id) {
+  let trades = loadTrades();
+  trades = trades.filter(t => t.id !== id);
+  saveTrades(trades);
+  renderTrades();
+}
+
+// ─────────────────────────────────────────────
+//  거래내역 — Rendering
+// ─────────────────────────────────────────────
+function renderTrades() {
+  const trades = loadTrades();
+  const filter = document.getElementById('trade-filter-type').value;
+  const filtered = filter === 'all' ? trades : trades.filter(t => t.type === filter);
+
+  const listEl = document.getElementById('trade-list');
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = '<p class="trade-list__empty">거래내역이 없습니다.</p>';
+    document.getElementById('trade-summary').style.display = 'none';
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(t => {
+    const date = new Date(t.date);
+    const dateStr = date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    const timeStr = date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const badgeClass = t.type === 'buy' ? 'trade-item__badge--buy' : 'trade-item__badge--sell';
+    const typeLabel = t.type === 'buy' ? '매수' : '매도';
+    const amount = (t.price * t.qty).toLocaleString('ko-KR');
+    const feeStr = t.fee ? ` · 수수료 ${t.fee.toLocaleString('ko-KR')}원` : '';
+    const memoStr = t.memo ? ` · ${escapeHtml(t.memo)}` : '';
+
+    return `
+      <div class="trade-item" data-id="${escapeHtml(t.id)}">
+        <div class="trade-item__left">
+          <div class="trade-item__top">
+            <span class="trade-item__badge ${badgeClass}">${typeLabel}</span>
+            <span class="trade-item__stock">${escapeHtml(t.stock)}</span>
+          </div>
+          <div class="trade-item__detail">
+            ${dateStr} ${timeStr} · ${t.price.toLocaleString('ko-KR')}원 × ${t.qty.toLocaleString('ko-KR')}주${feeStr}${memoStr}
+          </div>
+        </div>
+        <div class="trade-item__right">
+          <div class="trade-item__amount">${amount}원</div>
+          <div class="trade-item__actions">
+            <button class="btn-trade-delete" data-id="${escapeHtml(t.id)}">삭제</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // 요약 표시
+  renderTradeSummary(trades);
+}
+
+function renderTradeSummary(trades) {
+  if (trades.length === 0) {
+    document.getElementById('trade-summary').style.display = 'none';
+    return;
+  }
+  document.getElementById('trade-summary').style.display = '';
+
+  const totalBuy = trades.filter(t => t.type === 'buy').reduce((s, t) => s + t.price * t.qty, 0);
+  const totalSell = trades.filter(t => t.type === 'sell').reduce((s, t) => s + t.price * t.qty, 0);
+  const totalFee = trades.reduce((s, t) => s + (t.fee || 0), 0);
+  const totalTrades = trades.length;
+
+  document.getElementById('trade-summary-grid').innerHTML = `
+    <div class="trade-summary-card">
+      <div class="trade-summary-card__label">총 매수금액</div>
+      <div class="trade-summary-card__value" style="color:var(--positive)">${totalBuy.toLocaleString('ko-KR')}원</div>
+    </div>
+    <div class="trade-summary-card">
+      <div class="trade-summary-card__label">총 매도금액</div>
+      <div class="trade-summary-card__value" style="color:var(--negative)">${totalSell.toLocaleString('ko-KR')}원</div>
+    </div>
+    <div class="trade-summary-card">
+      <div class="trade-summary-card__label">총 수수료</div>
+      <div class="trade-summary-card__value">${totalFee.toLocaleString('ko-KR')}원</div>
+    </div>
+    <div class="trade-summary-card">
+      <div class="trade-summary-card__label">총 거래건수</div>
+      <div class="trade-summary-card__value">${totalTrades}건</div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────
+//  거래내역 — Form Handlers
+// ─────────────────────────────────────────────
+function updateAmountPreview() {
+  const price = parseInt((document.getElementById('trade-price').value || '0').replace(/,/g, '')) || 0;
+  const qty = parseInt((document.getElementById('trade-qty').value || '0').replace(/,/g, '')) || 0;
+  const amount = price * qty;
+  document.getElementById('trade-amount-preview').textContent =
+    amount > 0 ? `금액: ${amount.toLocaleString('ko-KR')}원` : '금액: ―';
+}
+
+function formatTradeInput(input) {
+  input.addEventListener('input', () => {
+    const raw = input.value.replace(/[^0-9]/g, '');
+    input.value = raw ? parseInt(raw).toLocaleString('ko-KR') : '';
+    updateAmountPreview();
+  });
+}
+
+function setDefaultTradeDate() {
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const iso = kst.toISOString().slice(0, 16);
+  document.getElementById('trade-date').value = iso;
+}
+
+document.getElementById('trade-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const trade = {
+    date: document.getElementById('trade-date').value,
+    type: document.getElementById('trade-type').value,
+    stock: document.getElementById('trade-stock').value.trim(),
+    price: parseInt(document.getElementById('trade-price').value.replace(/,/g, '')) || 0,
+    qty: parseInt(document.getElementById('trade-qty').value.replace(/,/g, '')) || 0,
+    fee: parseInt((document.getElementById('trade-fee').value || '0').replace(/,/g, '')) || 0,
+    memo: document.getElementById('trade-memo').value.trim(),
+  };
+
+  if (!trade.date || !trade.stock || trade.price <= 0 || trade.qty <= 0) {
+    alert('거래일시, 종목명, 단가, 수량을 모두 입력해주세요.');
+    return;
+  }
+
+  addTrade(trade);
+
+  // 폼 초기화
+  document.getElementById('trade-form').reset();
+  document.getElementById('trade-amount-preview').textContent = '금액: ―';
+  setDefaultTradeDate();
+});
+
+// 삭제 버튼 (이벤트 위임)
+document.getElementById('trade-list').addEventListener('click', e => {
+  const btn = e.target.closest('.btn-trade-delete');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (confirm('이 거래내역을 삭제하시겠습니까?')) {
+    deleteTrade(id);
+  }
+});
+
+// 필터 변경
+document.getElementById('trade-filter-type').addEventListener('change', renderTrades);
+
+// 초기화
+formatTradeInput(document.getElementById('trade-price'));
+formatTradeInput(document.getElementById('trade-qty'));
+formatTradeInput(document.getElementById('trade-fee'));
+setDefaultTradeDate();
+renderTrades();
 
 // ─────────────────────────────────────────────
 //  Init
