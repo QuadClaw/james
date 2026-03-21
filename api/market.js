@@ -12,6 +12,7 @@ const SYMBOL_MAP = {
   '^KS11': { name: '코스피',         currency: 'KRW' },
   '^KQ11': { name: '코스닥',         currency: 'KRW' },
   '^IXIC': { name: '나스닥',         currency: 'USD' },
+  '^TNX':  { name: '미국10년국채',   currency: '%'   },
 };
 
 const DEFAULT_SYMBOLS = Object.keys(SYMBOL_MAP);
