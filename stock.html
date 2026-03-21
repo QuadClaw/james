@@ -1712,7 +1712,7 @@ function drawChart(ind, i, history, changePercent, previousClose) {
           ticks: {
             color: getChartTheme().tickColor,
             font: { size: 11 },
-            callback: v => Math.round(v).toLocaleString('ko-KR'),
+            callback: v => ind.unit === '%' ? v.toFixed(2) : v < 100 ? v.toFixed(2) : Math.round(v).toLocaleString('ko-KR'),
           }
         }
       }
@@ -2103,7 +2103,7 @@ function drawStocksChart(ind, i, history, changePercent, previousClose) {
         },
         y: {
           grid: { color: getChartTheme().gridColor },
-          ticks: { color: getChartTheme().tickColor, font: { size: 11 }, callback: v => Math.round(v).toLocaleString('ko-KR') }
+          ticks: { color: getChartTheme().tickColor, font: { size: 11 }, callback: v => ind.unit === '%' ? v.toFixed(2) : v < 100 ? v.toFixed(2) : Math.round(v).toLocaleString('ko-KR') }
         }
       }
     },
