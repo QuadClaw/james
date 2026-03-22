@@ -204,7 +204,7 @@ async function fetchYahooSymbol(symbol, range, interval) {
     }
   }
 
-  const current = meta.regularMarketPrice ?? meta.previousClose ?? null;
+  let current = meta.regularMarketPrice ?? meta.previousClose ?? null;
 
   // previousClose: 5d 일봉에서 직전 거래일 종가를 직접 가져옴 (Yahoo meta가 부정확할 수 있음)
   let previousClose = null;
