@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KE Award Checker</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="header-title">✈️ KE Award Checker</div>
+    <div class="header-subtitle">대한항공 마일리지 특가 조회</div>
+  </div>
+
+  <!-- 검색 폼 -->
+  <div class="form-section">
+    <!-- 출발/도착 -->
+    <div class="row-two">
+      <div class="form-group">
+        <label for="origin">출발</label>
+        <select id="origin">
+          <option value="ICN">ICN - 인천</option>
+          <option value="JFK">JFK - 뉴욕(JFK)</option>
+          <option value="LAX">LAX - 로스앤젤레스</option>
+          <option value="NRT">NRT - 도쿄(나리타)</option>
+          <option value="SFO">SFO - 샌프란시스코</option>
+          <option value="CDG">CDG - 파리</option>
+          <option value="LHR">LHR - 런던</option>
+        </select>
+      </div>
+      <div class="swap-btn-wrap">
+        <button id="swapBtn" class="swap-btn" title="출발/도착 교환">⇄</button>
+      </div>
+      <div class="form-group">
+        <label for="destination">도착</label>
+        <select id="destination">
+          <option value="ICN">ICN - 인천</option>
+          <option value="JFK" selected>JFK - 뉴욕(JFK)</option>
+          <option value="LAX">LAX - 로스앤젤레스</option>
+          <option value="NRT">NRT - 도쿄(나리타)</option>
+          <option value="SFO">SFO - 샌프란시스코</option>
+          <option value="CDG">CDG - 파리</option>
+          <option value="LHR">LHR - 런던</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 날짜 범위 -->
+    <div class="form-group">
+      <label for="departDate">출발일</label>
+      <input type="date" id="departDate">
+    </div>
+    <div class="form-group">
+      <label for="returnDate">종료일 <span class="label-hint">(이 날짜까지 검색)</span></label>
+      <input type="date" id="returnDate">
+    </div>
+
+    <!-- 좌석등급 -->
+    <div class="form-group">
+      <label for="cabin">좌석 등급</label>
+      <select id="cabin">
+        <option value="Y">Y - 일반석</option>
+        <option value="C" selected>C - 프레스티지</option>
+        <option value="F">F - 일등석</option>
+      </select>
+    </div>
+
+    <!-- 검색 버튼 -->
+    <button id="searchBtn" class="search-btn">🔍 검색하기</button>
+  </div>
+
+  <!-- 결과 영역 -->
+  <div class="result-section">
+    <div class="result-header">
+      <span>검색 결과</span>
+      <label class="toggle-wrap" title="가능한 날짜만 보기">
+        <input type="checkbox" id="showOnlyAvailable" checked>
+        <span class="toggle-label">가능만 보기</span>
+      </label>
+    </div>
+    <div id="resultArea" class="result-area">
+      <div class="result-placeholder">결과가 여기에 표시됩니다</div>
+    </div>
+  </div>
+
+  <!-- 하단 안내 -->
+  <div class="footer-notice">
+    ⚠️ 대한항공 로그인 상태에서만 동작합니다
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
