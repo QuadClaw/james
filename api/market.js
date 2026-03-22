@@ -233,6 +233,24 @@ async function fetchYahooSymbol(symbol, range, interval) {
     previousClose = meta.chartPreviousClose ?? meta.previousClose ?? null;
   }
 
+  // NAVER 보정: 환율은 NAVER에서 현재가를 가져와 보정 (Yahoo FX는 지연될 수 있음)
+  if (symbol === 'KRW=X') {
+    try {
+      const naverRes = await fetch('https://m.stock.naver.com/front-api/marketIndex/productDetail?category=exchange&reutersCode=FX_USDKRW', {
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+      if (naverRes.ok) {
+        const naver = await naverRes.json();
+        const naverPrice = parseFloat(naver.result?.closePrice?.replace(/,/g, ''));
+        if (!isNaN(naverPrice) && naverPrice > 0) {
+          current = naverPrice;
+        }
+      }
+    } catch (e) {
+      // NAVER 실패 시 Yahoo 값 유지
+    }
+  }
+
   // lastMarketDate: regularMarketTime 자체의 날짜 (가장 최근 거래일)
   let lastMarketDate = null;
   if (meta.regularMarketTime) {

@@ -1385,7 +1385,7 @@ function renderKPICard(ind, d) {
   const arrow = changeArrow(d.changePercent);
   const pct = d.changePercent != null ? `${Math.abs(d.changePercent).toFixed(2)}%` : '—';
   const changeAbs = d.change != null ? formatValue(Math.abs(d.change), ind.unit) : '—';
-  const isNaver = ind.symbol === '^KS11' || ind.symbol === '^KQ11' || ind.symbol.endsWith('.KS') || ind.symbol.endsWith('.KQ');
+  const isNaver = ind.symbol === '^KS11' || ind.symbol === '^KQ11' || ind.symbol === 'KRW=X' || ind.symbol.endsWith('.KS') || ind.symbol.endsWith('.KQ');
   const sourceLabel = isNaver ? '출처: NAVER Finance' : '출처: Yahoo Finance';
   const lastDateLabel = d.lastMarketDate ? formatLastMarketDateLabel(d.lastMarketDate) : null;
   const lastDateHTML = lastDateLabel
