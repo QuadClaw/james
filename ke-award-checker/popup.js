@@ -4,7 +4,7 @@
  */
 
 // ── 상수 ─────────────────────────────────────────────
-const AWARD_URL = 'https://www.koreanair.com/booking/best-award#/search';
+const AWARD_URL = 'https://www.koreanair.com/booking/calendar-fare-bonus#/search';
 const STORAGE_KEY_PARAMS  = 'ke_last_params';
 const STORAGE_KEY_RESULTS = 'searchResults';
 const STORAGE_KEY_TS      = 'searchTimestamp';

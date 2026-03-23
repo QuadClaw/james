@@ -75,7 +75,7 @@ chrome.storage.local.get('lastApiCapture', console.log);
 또는 DevTools > Application > Storage > Local Storage > `chrome-extension://...`
 
 ### DOM 셀렉터 업데이트 방법
-1. `koreanair.com/booking/best-award` 접속
+1. `koreanair.com/booking/calendar-fare-bonus` 접속
 2. DevTools > Network > Fetch/XHR 필터
 3. `award` 또는 `availability` 관련 요청 확인
 4. `content-main.js`의 `tryParseAwardResults()` 함수에서 실제 필드명으로 업데이트

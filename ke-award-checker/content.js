@@ -64,11 +64,11 @@
     console.log(LOG_PREFIX, 'Search requested:', params);
 
     // 현재 페이지가 마일리지 특가 페이지인지 확인
-    if (!window.location.href.includes('best-award') &&
+    if (!window.location.href.includes('calendar-fare-bonus') &&
         !window.location.href.includes('award')) {
       // 올바른 페이지로 이동
       window.location.href =
-        'https://www.koreanair.com/booking/best-award#/search';
+        'https://www.koreanair.com/booking/calendar-fare-bonus#/search';
       // 페이지 이동 후 content script가 재로드됨 — 결과는 postMessage로 전달됨
       sendResponse({ status: 'navigating' });
       return;
@@ -123,7 +123,7 @@
    *
    * 현재는 예상 셀렉터 기반 placeholder.
    * 실제 셀렉터 파악 방법:
-   *   1. koreanair.com/booking/best-award 접속
+   *   1. koreanair.com/booking/calendar-fare-bonus 접속
    *   2. DevTools > Elements 탭에서 검색 폼 구조 확인
    *   3. 아래 SELECTORS 객체 업데이트
    */
@@ -219,7 +219,7 @@
     const { origin, destination, departDate, returnDate, cabin } = params;
 
     // 예상 URL 구조 (실제 확인 필요)
-    const url = new URL('https://www.koreanair.com/booking/best-award');
+    const url = new URL('https://www.koreanair.com/booking/calendar-fare-bonus');
     url.hash =
       `/search?origin=${origin}&destination=${destination}` +
       `&departDate=${departDate}&returnDate=${returnDate}` +

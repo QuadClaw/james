@@ -75,7 +75,7 @@
       lower.includes('award') ||
       lower.includes('availability') ||
       lower.includes('mileage') ||
-      lower.includes('best-award') ||
+      lower.includes('calendar-fare-bonus') ||
       lower.includes('calendar') ||
       // 대한항공 실제 API 엔드포인트 후보 (확인 필요)
       lower.includes('/api/') && lower.includes('search')
