@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>그랑자이 - JamesClaw</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="https://openclaw.ai/apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="https://openclaw.ai/apple-touch-icon.png">
+
+  <style>
+    /* ===== Reset ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-page:   #0f172a;
+      --bg-card:   #1e293b;
+      --bg-header: #1e293b;
+      --border:    #334155;
+      --text:      #e0e0e0;
+      --text-muted:#9ca3af;
+      --positive:  #f97316;
+      --negative:  #38bdf8;
+      --accent:    #38bdf8;
+      --radius:    12px;
+      --gap:       16px;
+      --header-height: 70px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
+    }
+
+    html { scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+
+    body {
+      background: var(--bg-page);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+    }
+
+    /* ===== Header ===== */
+    .dashboard-header {
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      padding-top: calc(12px + env(safe-area-inset-top, 0px));
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-row-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .header-left h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn-refresh {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: opacity 0.2s;
+    }
+    .btn-refresh:hover { opacity: 0.85; }
+    .btn-refresh:active { opacity: 0.7; }
+    .btn-refresh.loading { opacity: 0.6; pointer-events: none; }
+
+    .btn-home {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-muted);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-home:hover { background: rgba(255,255,255,0.14); color: var(--text); }
+
+    .header-row-bottom {
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 400px) {
+      .btn-label { display: none; }
+    }
+
+    /* ===== Main Content ===== */
+    .main-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ===== Card ===== */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    .card-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    /* ===== Complex Info Card ===== */
+    .complex-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .complex-address {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .complex-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .meta-badge {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: var(--accent);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .price-range-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 500px) {
+      .price-range-row { grid-template-columns: 1fr; }
+    }
+
+    .price-stat {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+    }
+
+    .price-stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .price-stat-value {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--positive);
+    }
+
+    .price-stat-value.skeleton-text {
+      background: var(--border);
+      color: transparent;
+      border-radius: 4px;
+      animation: shimmer 1.4s infinite;
+    }
+
+    @keyframes shimmer {
+      0%   { opacity: 1; }
+      50%  { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+
+    /* ===== Two Column Grid ===== */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    /* ===== Listings ===== */
+    .listing-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .listing-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .listing-price {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .listing-meta {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    .empty-state {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 24px 0;
+    }
+
+    /* ===== Trades Table ===== */
+    .trades-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .trades-table th {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0 8px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .trades-table th:last-child { text-align: right; }
+
+    .trades-table td {
+      padding: 10px 8px;
+      font-size: 0.9rem;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+    }
+
+    .trades-table tr:last-child td { border-bottom: none; }
+
+    .trades-table td:last-child {
+      text-align: right;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .trade-date {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* ===== NAVER Button ===== */
+    .btn-naver {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      height: 56px;
+      background: #03C75A;
+      color: #ffffff;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: var(--radius);
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn-naver:hover { background: #02a84b; }
+    .btn-naver:active { transform: scale(0.99); }
+
+    /* ===== Footer ===== */
+    footer {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      padding: 8px 16px 24px;
+    }
+
+    /* ===== Skeleton ===== */
+    .skel {
+      background: var(--border);
+      border-radius: 4px;
+      animation: shimmer 1.4s infinite;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="dashboard-header">
+    <div class="header-row-top">
+      <div class="header-left"><h1>🏠 그랑자이</h1></div>
+      <div class="header-actions">
+        <button id="btn-refresh" class="btn-refresh">⟳ <span class="btn-label">새로고침</span></button>
+        <a href="index.html" class="btn-home">🏠 <span class="btn-label home-label">JamesClaw</span></a>
+      </div>
+    </div>
+    <div class="header-row-bottom">
+      업데이트: <span id="last-updated">—</span>
+    </div>
+  </header>
+
+  <main class="main-content">
+
+    <!-- 단지 정보 카드 -->
+    <div class="card">
+      <div class="card-title">단지 정보</div>
+      <div class="complex-name">서초그랑자이</div>
+      <div class="complex-address">서울 서초구 서초동 1757</div>
+      <div class="complex-meta">
+        <span class="meta-badge">1,446세대</span>
+        <span class="meta-badge">총 9동</span>
+        <span class="meta-badge">전용 59.98㎡ (25평)</span>
+        <span class="meta-badge">공급 83.85㎡</span>
+      </div>
+      <div class="price-range-row">
+        <div class="price-stat">
+          <div class="price-stat-label">실거래가 범위</div>
+          <div class="price-stat-value" id="price-range"><span class="skel" style="width:120px;height:1.2rem;">&nbsp;</span></div>
+        </div>
+        <div class="price-stat">
+          <div class="price-stat-label">최근 매매가</div>
+          <div class="price-stat-value" id="recent-price"><span class="skel" style="width:80px;height:1.2rem;">&nbsp;</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2열 그리드: 매물 + 실거래가 -->
+    <div class="two-col">
+
+      <!-- 현재 매물 -->
+      <div class="card">
+        <div class="card-title">현재 매물 <span style="font-weight:400;text-transform:none;letter-spacing:0;">(NAVER 검색 기준)</span></div>
+        <div class="listing-grid" id="listing-grid">
+          <div class="empty-state">불러오는 중…</div>
+        </div>
+      </div>
+
+      <!-- 실거래가 내역 -->
+      <div class="card">
+        <div class="card-title">최근 거래 <span style="font-weight:400;text-transform:none;letter-spacing:0;">(국토부 기준)</span></div>
+        <div id="trades-wrapper">
+          <div class="empty-state">불러오는 중…</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- NAVER 부동산 바로가기 -->
+    <a
+      class="btn-naver"
+      href="https://new.land.naver.com/complexes/126726?ms=37.489144,127.025957,17&a=APT:ABYG:JGC:PRE&e=RETAIL&ad=true"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      NAVER 부동산에서 매물 보기 ↗
+    </a>
+
+  </main>
+
+  <footer>
+    출처: NAVER 검색 &nbsp;·&nbsp; 최종 업데이트: <span id="footer-updated">—</span>
+  </footer>
+
+  <script>
+    const NAVER_LAND_URL = 'https://new.land.naver.com/complexes/126726?ms=37.489144,127.025957,17&a=APT:ABYG:JGC:PRE&e=RETAIL&ad=true';
+
+    async function loadData() {
+      const btn = document.getElementById('btn-refresh');
+      btn.classList.add('loading');
+      btn.textContent = '⟳ 로딩…';
+
+      try {
+        const res = await fetch('/api/granzai');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        renderComplexInfo(data.complex);
+        renderListings(data.listings);
+        renderTrades(data.recentTrades);
+
+        const dt = new Date(data.updatedAt).toLocaleString('ko-KR', {
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit'
+        });
+        document.getElementById('last-updated').textContent = dt;
+        document.getElementById('footer-updated').textContent = dt;
+      } catch (err) {
+        console.error(err);
+        document.getElementById('listing-grid').innerHTML =
+          `<div class="empty-state" style="color:#f97316;">오류: ${err.message}</div>`;
+      } finally {
+        btn.classList.remove('loading');
+        btn.innerHTML = '⟳ <span class="btn-label">새로고침</span>';
+      }
+    }
+
+    function renderComplexInfo(complex) {
+      if (!complex) return;
+
+      const rangeEl = document.getElementById('price-range');
+      const recentEl = document.getElementById('recent-price');
+
+      if (complex.priceMin && complex.priceMax) {
+        rangeEl.textContent = `${complex.priceMin} ~ ${complex.priceMax}`;
+      } else {
+        rangeEl.textContent = '—';
+      }
+
+      if (complex.recentPrice) {
+        recentEl.textContent = complex.recentPrice;
+      } else {
+        recentEl.textContent = '—';
+      }
+    }
+
+    function renderListings(listings) {
+      const grid = document.getElementById('listing-grid');
+
+      if (!listings || listings.length === 0) {
+        grid.innerHTML = '<div class="empty-state">현재 검색된 매물이 없습니다</div>';
+        return;
+      }
+
+      grid.innerHTML = listings.map(l => `
+        <div class="listing-card">
+          <div class="listing-price">${escHtml(l.price)}</div>
+          <div class="listing-meta">${l.direction ? escHtml(l.direction) : ''}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderTrades(trades) {
+      const wrapper = document.getElementById('trades-wrapper');
+
+      if (!trades || trades.length === 0) {
+        wrapper.innerHTML = '<div class="empty-state">거래 내역이 없습니다</div>';
+        return;
+      }
+
+      // 최신 순 정렬
+      const sorted = [...trades].sort((a, b) => b.date.localeCompare(a.date));
+
+      wrapper.innerHTML = `
+        <table class="trades-table">
+          <thead>
+            <tr>
+              <th>날짜</th>
+              <th>거래가</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sorted.map(t => `
+              <tr>
+                <td class="trade-date">${escHtml(t.date)}</td>
+                <td>${escHtml(t.price)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // 새로고침 버튼
+    document.getElementById('btn-refresh').addEventListener('click', loadData);
+
+    // 초기 로드
+    loadData();
+  </script>
+</body>
+</html>
