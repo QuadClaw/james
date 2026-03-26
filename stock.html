@@ -1241,6 +1241,7 @@ const INDICATORS = [
 // Period options
 const PERIOD_OPTIONS = [
   { id: '1d',  range: '1d',  interval: '5m',  label: '1일' },
+  { id: '5d',  range: '5d',  interval: '15m', label: '1주' },
   { id: '1mo', range: '1mo', interval: '1d',  label: '1개월' },
   { id: '3mo', range: '3mo', interval: '1d',  label: '3개월' },
   { id: '1y',  range: '1y',  interval: '1wk', label: '1년' },
@@ -1617,9 +1618,10 @@ function drawChart(ind, i, history, changePercent, previousClose) {
   }
 
   const labels = history.map(h => {
-    if (period.range === '1d' && h.date.includes('T')) {
+    if ((period.range === '1d' || period.range === '5d') && h.date.includes('T')) {
       const dt = new Date(h.date);
-      return dt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+      if (period.range === "5d") return `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}`;
+      return dt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
     }
     if (period.range === '10y') {
       // Monthly data → YYYY/M
@@ -2022,9 +2024,10 @@ function drawStocksChart(ind, i, history, changePercent, previousClose) {
   }
 
   const labels = history.map(h => {
-    if (period.range === '1d' && h.date.includes('T')) {
+    if ((period.range === '1d' || period.range === '5d') && h.date.includes('T')) {
       const dt = new Date(h.date);
-      return dt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+      if (period.range === "5d") return `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,"0")}:${String(dt.getMinutes()).padStart(2,"0")}`;
+      return dt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
     }
     if (period.range === '10y') {
       const parts = h.date.split('-');
